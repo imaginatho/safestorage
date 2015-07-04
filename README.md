@@ -4,7 +4,12 @@ This project was a implentation of master transactional log file, in other words
 
 ## Code Example
 
-Not ready
+```C++
+int main ( int argc, char *argv[] )
+{
+  printf("%d\n", argc);
+}
+```
 
 ## Motivation
 
