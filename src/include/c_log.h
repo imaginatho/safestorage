@@ -2,6 +2,7 @@
 #define __C_LOG__H__
 
 #include <stdint.h>
+#include <string.h>
 
 #ifndef C_LOG_LEVEL
 #define C_LOG_LEVEL 8

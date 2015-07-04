@@ -78,7 +78,6 @@ class CBaseSafeFile
         int32_t fillWorkArea ( int32_t len, const CDataArray &darray, int32_t offset_len = -1);
         int64_t writeWorkArea ( int64_t loff, int32_t len, int32_t skip = 0, int64_t *last_loff = NULL );
         int64_t readWorkArea ( int64_t loff, uint32_t flags, int32_t len, int32_t skip = 0, int64_t *last_loff = NULL );
-        tcrc_t crc32 ( void *data, int32_t dlen );
         void allocateMemory ( void );
         void clearCache ( int64_t _loff = 0, int32_t len = -1);
         int64_t seek ( int64_t loff, int32_t len = 0, bool write = false );

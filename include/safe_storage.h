@@ -4,46 +4,30 @@
 #include <stdint.h>
 #include <string>
 
+#define SAFE_STORAGE_VERSION	0x0101
+
 typedef int32_t tseq_t;
 typedef int32_t tserial_t;
 typedef int8_t tslot_t;
-
-struct CSafeStorageDataReg
-{
-    uint32_t signature;
-    tserial_t serial;
-    tseq_t sequence;
-	tslot_t slot;
-    int32_t len;
-    uint8_t flags;
-} __attribute__ ((packed));
-
-#ifndef MAX_SEQUENCE_SLOT
-#define MAX_SEQUENCE_SLOT			16
-#endif
 
 #ifndef N_SS_LAST_OFFSETS
 #define N_SS_LAST_OFFSETS 16
 #endif
 
-struct CSafeStorageState
+struct CSafeStorageInfo
 {
     uint32_t hash_key;
     uint32_t last_updated;
+	uint32_t version;
     int32_t count;
     int32_t commit_count;
     int32_t rollback_begin_count;
     int32_t rollback_end_count;
-    int32_t data_count;
-    int8_t last_offset_index;
 
-    tseq_t last_commit_sequences[MAX_SEQUENCE_SLOT];
-    tseq_t last_rollback_sequences[MAX_SEQUENCE_SLOT];
-    tseq_t last_close_sequence;
+    tseq_t last_commit_sequence;
+    tseq_t last_rollback_sequence;
     tseq_t last_sequence;
 
-    uint64_t last_close_offset;
-    uint64_t last_offsets[N_SS_LAST_OFFSETS];
 } __attribute__ ((packed));
 
 #define E_CSTORAGE_OK               				0
@@ -65,6 +49,7 @@ struct CSafeStorageState
 #define E_CSTORAGE_LOCKED_REGISTER				    -513
 #define E_CSTORAGE_OPERATION_NOT_ALLOWED			-514
 #define E_CSTORAGE_OPERATION_NOT_IMPLEMENTED		-515
+#define E_CSTORAGE_NOT_ENOUGH_DATA					-516
 
 #define E_CSTORAGE_ONLT_ONE_WRITTER		-600
 
@@ -91,28 +76,52 @@ struct CSafeStorageState
 #define T_CSTORAGE_ROLLBACK_END	          0x04
 #define T_CSTORAGE_STATUS		          0x05
 
+#define F_CSTORAGE_STD_INSTANCE				0x00000000
+#define F_CSTORAGE_MASTER_INSTANCE			0x00000100
+#define	F_CSTORAGE_SLAVE_INSTANCE			0x00000200
+
+#define E_CB_REPLICA_FAIL					-1000
+
+typedef int32_t (* tsafestorage_callback_t)(int32_t, void *);
+
+class ISafeStorageListener
+{
+	public:
+		virtual ~ISafeStorageListener ( void ) {};
+		virtual int32_t stop();
+};
+
+class ISafeStorageReplica 
+{
+	public:
+		virtual ~ISafeStorageReplica ( void ) {};
+		virtual int32_t stop();
+};
+
 class ISafeStorage
 {
     public:
-		virtual ~ISafeStorage () {};
+		virtual ~ISafeStorage ( void ) {};
         virtual int32_t close ( uint32_t flags = 0 ) = 0;
         virtual int32_t open ( const std::string &location, uint32_t flags = 0, uint32_t hash_key = 0 ) = 0;
-        virtual int32_t getState ( CSafeStorageState &state ) = 0;
+        virtual int32_t getInfo ( CSafeStorageInfo &info ) = 0;
         virtual int32_t commit ( void ) = 0;
         virtual int32_t rollback ( void ) = 0;
         virtual int32_t verify ( uint32_t flags = 0 ) = 0;
         virtual int32_t write ( tserial_t serial, const void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
         virtual int32_t read ( tserial_t &serial, void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 ) = 0;
-        virtual int32_t readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
-        virtual int32_t applyLog ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
+        virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
+        virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
 		virtual int32_t goTop ( uint32_t flags = 0 ) = 0;
 		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 ) = 0;
-//		virtual int32_t setFlags ( uint32_t flags ) { return E_CSTORAGE_OPERATION_NOT_IMPLEMENTED; };
 		virtual int32_t getParam ( const std::string &name ) = 0;
 		virtual int32_t setParam ( const std::string &name, int32_t value ) = 0;
+		virtual int32_t createListener ( const std::string &params, ISafeStorageListener **ltn = NULL )	= 0;
+		virtual int32_t createReplica ( const std::string &params, ISafeStorageReplica **rpl = NULL ) = 0;	
+		virtual int32_t setCallback ( tsafestorage_callback_t cb ) = 0;
 };
 
-ISafeStorage *createISafeStorage ( uint32_t flags = 0 );
+ISafeStorage *createISafeStorage ( uint32_t flags = F_CSTORAGE_STD_INSTANCE, uint32_t version = SAFE_STORAGE_VERSION );
 
 #endif

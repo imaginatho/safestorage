@@ -1,5 +1,8 @@
 #include <data_array.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <typeinfo>
 #include <string>
 #include <exception>
@@ -83,19 +86,19 @@ int32_t CDataArray::size ( void ) const
 
 void *CDataArray::data ( int32_t index ) const 
 { 
-    return (index >= 0 & index < _count)?_datas[index]:NULL; 
+    return (index >= 0 && index < _count)?_datas[index]:NULL; 
 }   
 
 int32_t CDataArray::len ( int32_t index ) const
 { 
-	int32_t result = (index >= 0 & index < _count)?_lens[index]:0;
+	int32_t result = (index >= 0 && index < _count)?_lens[index]:0;
 //	C_LOG_DEBUG("CDataArray[%p]::len(%d)=%d _lens=%p", this, index, result, _lens);
     return result;
 }   
 
 uint8_t CDataArray::flags ( int32_t index ) const 
 { 
-    return (index >= 0 & index < _count)?_flags[index]:0; 
+    return (index >= 0 && index < _count)?_flags[index]:0; 
 } 
 
 int32_t CDataArray::setFromBuffer ( void *data, int32_t dlen )

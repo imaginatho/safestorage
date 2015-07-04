@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <syslog.h>
 
 #include <iostream>
 #include <sstream>
@@ -82,8 +83,10 @@ CSafeStorage::CSafeStorage ( void )
 		fstate(0,0)
 {
 	cursor = -1;
-	slot = 0;
 	rdwr = false;
+	dirtySerials = NULL;
+	dirtySerialSize = 0;
+	dirtySerialIndex = 0;
 	mode = CSTORAGE_MODE_STANDARD;
     memset(&state, 0, sizeof(state));
     files.push_back(&fdata);
@@ -98,6 +101,7 @@ CSafeStorage::CSafeStorage ( void )
 CSafeStorage::~CSafeStorage ()
 {
     close();
+	if (dirtySerials) free(dirtySerials);
 }
 
 /*
@@ -113,7 +117,7 @@ int32_t CSafeStorage::close ( uint32_t flags )
         (*it)->close();
         ++it;
     }
-	dirtySerials.clear();
+	clearDirtySerials();
 	
 	if (rdwr) sync(true);
 
@@ -293,9 +297,8 @@ int32_t CSafeStorage::rebuild ( const string &filename, uint32_t flags )
     }
 	// TODO: Rebuild, gestion del rebuild
     while ((result = fdata.read(C_CSFILE_CURRPOS, r_data, data, 1024*1024)) > 0)
-//    while ((result = fdata.read(C_CSFILE_CURRPOS, r_data, NULL, 0)) > 0)
     {
-		printf("%08X %8d %8d %02d %6d %02X\n", r_data.signature, r_data.serial, r_data.sequence, r_data.slot, r_data.len, r_data.flags);
+		printf("%08X %8d %8d  %6d %02X\n", r_data.signature, r_data.serial, r_data.sequence, r_data.len, r_data.flags);
 		writeFiles(r_data, data, r_data.len);
     }
 	printf("end rebuild (%d)\n", result);
@@ -379,27 +382,29 @@ int32_t CSafeStorage::commit ( void )
 
     r_data.signature = CSTORAGE_SIGNATURE | T_CSTORAGE_COMMIT;
     r_data.sequence = state.last_sequence + 1;
-	r_data.slot = slot;
     int32_t result = writeFiles(r_data);
 	
 	// TO-DO: open transactions, make a rollback?
 
-	// clearDirtySerials();
+	clearDirtySerials();
 	sync();
     return result;
 }
 
 void CSafeStorage::clearDirtySerials ( void )
 {
-	CSafeStorageSerialList::iterator it2, it = dirtySerials.begin();
-	while (it != dirtySerials.end())
-	{	
-		it2 = it;
-		++it;
-		if ((*it2).second == slot) {
-			dirtySerials.erase(it2);
-		}
+	dirtySerialIndex = 0;
+}
+
+
+void CSafeStorage::addDirtySerial ( tserial_t serial )
+{
+	if (dirtySerialIndex >= dirtySerialSize) {
+		dirtySerialSize += C_DIRTY_SERIAL_SIZE;
+		if (!dirtySerials) dirtySerials = (tserial_t *)malloc(dirtySerialSize * sizeof(tserial_t));
+		else dirtySerials = (tserial_t *)realloc(dirtySerials, dirtySerialSize * sizeof(tserial_t));
 	}
+	dirtySerials[dirtySerialIndex++] = serial;	
 }
 
 /*
@@ -430,22 +435,13 @@ int32_t CSafeStorage::rollback ( void )
     C_LOG_DEBUG("CSafeStorage::rollback()");
     r_data.signature = CSTORAGE_SIGNATURE | T_CSTORAGE_ROLLBACK_BEGIN;
     r_data.sequence = state.last_sequence + 1;
-	r_data.slot = slot;
 
-    int32_t dlen = (dirtySerials.size()+1)* sizeof(tserial_t);
+    int32_t dlen = (dirtySerialIndex+1) * sizeof(tserial_t);
     tserial_t *serials = (tserial_t *)malloc(dlen);
-    serials[0] = dirtySerials.size();
+    serials[0] = dirtySerialIndex;
 
-	CSafeStorageSerialList::iterator it = dirtySerials.begin();
-	int32_t index = 1;
-	while (it != dirtySerials.end())
-	{
-		if ((*it).second == slot) {
-			serials[index++] = (*it).first;
-		}
-		++it;
-	}
-
+	for (uint32_t index = 0; index < dirtySerialIndex; ++index ) serials[index+1] = dirtySerials[index];
+	
     result = writeFiles(r_data, serials, dlen);
     free(serials);
 
@@ -455,7 +451,6 @@ int32_t CSafeStorage::rollback ( void )
     memset(&r_data, 0, sizeof(r_data));
 	r_data.sequence = state.last_sequence + 1;
 	r_data.signature = CSTORAGE_SIGNATURE | T_CSTORAGE_ROLLBACK_END;
-	r_data.slot = slot;
 
     result = writeFiles(r_data);
 	clearDirtySerials();
@@ -492,7 +487,7 @@ int32_t CSafeStorage::verify ( uint32_t flags )
     		{
     			_state.last_close_sequence = r_data.sequence;
     			_state.last_close_offset = fdata.lastOffset();
-    			_state.last_commit_sequences[r_data.slot] = r_data.sequence;
+    			_state.last_commit_sequence = r_data.sequence;
     			++_state.commit_count;
     			break;
     		}
@@ -534,8 +529,8 @@ int32_t CSafeStorage::verify ( uint32_t flags )
     CMP_STRUCT_FIELD(state,_state,rollback_begin_count,result);
     CMP_STRUCT_FIELD(state,_state,rollback_end_count,result);
     CMP_STRUCT_FIELD(state,_state,last_offset_index,result);
-    CMP_STRUCT_ARRAY_FIELD(state,_state,last_commit_sequences,result);
-    CMP_STRUCT_ARRAY_FIELD(state,_state,last_rollback_sequences,result);
+    CMP_STRUCT_FIELD(state,_state,last_commit_sequence,result);
+    CMP_STRUCT_FIELD(state,_state,last_rollback_sequence,result);
     CMP_STRUCT_FIELD(state,_state,last_close_sequence,result);
     CMP_STRUCT_FIELD(state,_state,last_sequence,result);
     CMP_STRUCT_ARRAY_FIELD(state,_state,last_offsets,result);
@@ -549,7 +544,7 @@ int32_t CSafeStorage::recoverDirtySerials ( void )
     DECLARE_STRUCT(CSafeStorageDataReg ,r_data)
 
 	uint64_t offset = state.last_close_offset;
-    dirtySerials.clear();
+    clearDirtySerials();
 
     int32_t result = fdata.read(offset, r_data);
     if (result > 0)
@@ -574,7 +569,7 @@ int32_t CSafeStorage::recoverDirtySerials ( void )
         	return E_CSTORAGE_DATA_READ;
         }
         if ((r_data.flags & F_CSTORAGE_DF_AUTO_COMMIT) == 0)
-        	dirtySerials[r_data.serial] = r_data.slot;
+			addDirtySerial(r_data.serial);
     }
     return result;
 }
@@ -588,7 +583,6 @@ int32_t CSafeStorage::read ( tserial_t &serial, void *data, uint32_t dlen, uint3
     
     if (!rdwr) loadState();
     int32_t result = findex.readIndex(serial, r_index);
-//    printf(">>>>>> %d %d %lld\n", serial, result, r_index.offset);
 
     if (result == E_CSFILE_EMPTY_DATA)
     	return E_CSTORAGE_SERIAL_NOT_FOUND;
@@ -610,11 +604,10 @@ int32_t CSafeStorage::read ( tserial_t &serial, void *data, uint32_t dlen, uint3
 		if (result > 1024) { C_LOG_DEBUG("data(%p): %s...%s", data, c_log_data2hex(data, 0, 256), c_log_data2hex(data, result - 256, 256)); }
 		else { C_LOG_DEBUG("data(%p): %s",  data, c_log_data2hex(data, 0, result)); };
 	}	
-	
 		
 	result = result - sizeof(r_data);
 	
-    C_LOG_DEBUG("state.last_commit_sequences[%d]:%d r_data.sequence:%d autocommit:%s", r_data.slot, state.last_commit_sequences[slot], r_data.sequence,
+    C_LOG_DEBUG("state.last_commit_sequence:%d r_data.sequence:%d autocommit:%s", state.last_commit_sequence, r_data.sequence,
 		(r_data.flags & F_CSTORAGE_DF_AUTO_COMMIT)? "true":"false");
 
 	if (C_LOG_DEBUG_ENABLED) {
@@ -625,7 +618,7 @@ int32_t CSafeStorage::read ( tserial_t &serial, void *data, uint32_t dlen, uint3
 	return result;
 }
 
-int32_t CSafeStorage::readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *data, uint32_t dlen, uint32_t flags )
+int32_t CSafeStorage::readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags )
 {
     DECLARE_STRUCT(CSafeStorageLogReg ,r_log)
 
@@ -643,11 +636,15 @@ int32_t CSafeStorage::readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *d
     if (offset < 0)
     	return E_CSTORAGE_SEQUENCE_NOT_FOUND;
 
-    result = fdata.read(offset, r_data, data, dlen);
+	if (dlen < sizeof(CSafeStorageDataReg)) 
+		return E_CSTORAGE_NOT_ENOUGH_DATA;
+	
+	uint8_t *d_data = ((uint8_t *)data) + sizeof(CSafeStorageDataReg);
+    result = fdata.read(offset, *((CSafeStorageDataReg *)data), d_data, dlen - sizeof(CSafeStorageDataReg));
     if (result < 0)
         return result;
 
-    return result - sizeof(r_data);
+    return result;
 }
 
 /*
@@ -749,18 +746,9 @@ int32_t CSafeStorage::write ( tserial_t serial, const void *data, uint32_t dlen,
     
     C_LOG_DEBUG("CSafeStorage::write(%d, %p, %d) lseq:%d", serial, data, dlen, state.last_sequence);
 
-/*	CSafeStorageSerialList::iterator it = dirtySerials.find(serial);
-	if (it != dirtySerials.end() && (*it).second != slot) {
-		C_LOG_DEBUG("Locked Register %d", serial);
-		return E_CSTORAGE_LOCKED_REGISTER;
-	}*/
-	
-	// TO-DO: cuando se usen los slots verificar que no está usado por otro slot.
-    // prepare a data register of write
 	r_data.signature = CSTORAGE_SIGNATURE | T_CSTORAGE_WRITE;
 	r_data.serial = serial;
 	r_data.sequence = state.last_sequence + 1;
-	r_data.slot = slot;
 	r_data.len = dlen;
 	if (fauto_commit)
 		r_data.flags |= F_CSTORAGE_DF_AUTO_COMMIT;
@@ -768,9 +756,13 @@ int32_t CSafeStorage::write ( tserial_t serial, const void *data, uint32_t dlen,
     return writeFiles(r_data, data, dlen);
 }
 
-int32_t CSafeStorage::applyLog ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen, uint32_t flags )
+int32_t CSafeStorage::applyLog ( const void *data, uint32_t dlen, uint32_t flags )
 {
-	return writeFiles(r_data, data, dlen);
+	if (dlen < sizeof(CSafeStorageDataReg)) 
+		return E_CSTORAGE_NOT_ENOUGH_DATA;
+	
+	uint8_t *d_data = ((uint8_t *)data) + sizeof(CSafeStorageDataReg);
+	return writeFiles(*((CSafeStorageDataReg *)data), d_data, dlen - sizeof(CSafeStorageDataReg));
 }
 
 int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen )
@@ -785,7 +777,6 @@ int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data
 	++state.count;
     state.last_sequence = r_data.sequence;
 	r_log.serial = r_data.serial;
-	r_log.slot = r_data.slot;
 	r_log.type = type;
 	C_LOG_DEBUG("type:%08X dlen:%d", type, dlen);
 	switch (type)
@@ -804,8 +795,8 @@ int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data
 				return -1;
 			}
 
-/*			if (!fauto_commit)
-				dirtySerials[r_data.serial] = r_data.slot;*/
+			if (!fauto_commit)
+				addDirtySerial(r_data.serial);
 
 			// save state with information
 			saveState();
@@ -827,7 +818,6 @@ int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data
 		    int32_t count = serials[0];
 
 		    // must: dlen / sizeof(tserial_t) == serials[0]+1
-
 			int32_t index = 1;
 			while (index <= count)
 			{
@@ -859,7 +849,7 @@ int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data
 			r_log.offset = writeData(r_data);
 
 			++state.commit_count;
-			state.last_commit_sequences[r_data.slot] = r_data.sequence;
+			state.last_commit_sequence = r_data.sequence;
 			writeSyncStateLogSync(r_log);
 
 			break;
@@ -872,13 +862,11 @@ int32_t CSafeStorage::writeFiles ( CSafeStorageDataReg &r_data, const void *data
     
 		r_state_data.signature = CSTORAGE_SIGNATURE | T_CSTORAGE_STATUS;
 		r_state_data.sequence = state.last_sequence + 1;
-		r_state_data.slot = r_data.slot;
 
 		memset(&r_log, 0, sizeof(r_log));
 		++state.count;
 		state.last_sequence = r_state_data.sequence;
 		r_log.serial = r_state_data.serial;
-		r_log.slot = r_state_data.slot;
 		r_log.type = T_CSTORAGE_STATUS;
 		r_log.offset = writeData(r_state_data);
 		flog.writeIndex(state.last_sequence, r_log);
@@ -928,9 +916,19 @@ uint32_t CSafeStorage::generateHashKey ( void )
     return result;
 }
 
-int32_t CSafeStorage::getState ( CSafeStorageState &state )
+int32_t CSafeStorage::getInfo ( CSafeStorageInfo &info )
 {
-	state = this->state;
+    info.hash_key = state.hash_key;
+    info.last_updated = state.last_updated;
+	info.version = 0;
+    info.count = state.count;
+    info.commit_count = state.commit_count;
+    info.rollback_begin_count = state.rollback_begin_count;
+    info.rollback_end_count = state.rollback_end_count;
+    info.last_commit_sequence = state.last_commit_sequence;
+    info.last_rollback_sequence = state.last_rollback_sequence;
+    info.last_sequence = state.last_sequence;
+	
 	return E_CSTORAGE_OK;
 }
 
@@ -949,24 +947,7 @@ int32_t CSafeStorage::getHashKey ( uint32_t &hash_key )
 void CSafeStorage::dumpState ( void )
 {
     int32_t index;
-/*    uint32_t hash_key;
-    uint32_t last_updated;
-    int32_t count;
-    int32_t commit_count;
-    int32_t rollback_begin_count;
-    int32_t rollback_end_count;
-    int32_t data_count;
-    int8_t last_offset_index;
 
-    tseq_t last_commit_sequences[MAX_SEQUENCE_SLOT];
-    tseq_t last_rollback_sequences[MAX_SEQUENCE_SLOT];
-    tseq_t last_close_sequence;
-    tseq_t last_sequence;
-
-    uint64_t last_close_offset;
-    uint64_t last_offsets[N_SS_LAST_OFFSETS];
-} __attribute__ ((packed));
-*/    
     printf("[state]\n");
     printf("hash_key: %08X\n", state.hash_key);
     printf("last_updated: %d\n", state.last_updated);
@@ -975,16 +956,8 @@ void CSafeStorage::dumpState ( void )
     printf("rollback_begin_count: %d\n", state.rollback_begin_count);
     printf("rollback_end_count: %d\n", state.rollback_end_count);
     printf("last_offset_index: %d\n", state.last_offset_index);
-	printf("last_commit_sequences[%u]:", sizeof(state.last_commit_sequences)/sizeof(state.last_commit_sequences[0]));
-	for (index = 0; index < (int32_t)(sizeof(state.last_commit_sequences)/sizeof(state.last_commit_sequences[0])); ++index) {
-		printf("%s%d", index?",":"", state.last_commit_sequences[index]);
-	}
-	printf("\n");
-	printf("last_rollback_sequences[%u]:", sizeof(state.last_rollback_sequences)/sizeof(state.last_rollback_sequences[0]));
-	for (index = 0; index < (int32_t)(sizeof(state.last_rollback_sequences)/sizeof(state.last_rollback_sequences[0])); ++index) {
-		printf("%s%d", index?",":"", state.last_rollback_sequences[index]);
-	}
-	printf("\n");
+	printf("last_commit_sequence: %u\n", state.last_commit_sequence);
+	printf("last_rollback_sequence: %u\n", state.last_rollback_sequence);
     printf("last_close_sequence: %d\n", state.last_close_sequence);
     printf("last_sequence: %d\n", state.last_sequence);
     printf("last_close_offset: %lld\n", state.last_close_offset);
@@ -1037,18 +1010,15 @@ void CSafeStorage::setOldestOffset ( CSafeStorageIndexReg &index, tserial_t seri
  		index.offsets[0] = offset;
  		index.sequences[0] = sequence;
  		index.flags[0] = flags;
- 		index.slots[0] = slot;
  		index.offsets[1] = -1;
  		index.sequences[1] = 0;
  		index.flags[1] = 0;
-		index.slots[1] = 0;
  	}
  	else {
  		int32_t pos = (index.sequences[1] > index.sequences[0] ? 0 : 1);
  		index.offsets[pos] = offset;
  		index.sequences[pos] = sequence;
  		index.flags[pos] = flags;
- 		index.slots[pos] = slot;
  	}
 	C_LOG_TRACE("Out #:%ld 0:[%d,%lld] 1:[%d,%lld]", serial, index.sequences[0], index.offsets[0],index.sequences[1], index.offsets[1]);
 }
@@ -1068,25 +1038,19 @@ int64_t CSafeStorage::getLastOffset ( CSafeStorageIndexReg &index, tserial_t ser
 	int64_t result = -1;
 	tseq_t lastseq = 0;
 
-	CSafeStorageSerialList::iterator it;
 	uint32_t dirtyRead = flags & F_CSTORAGE_READ_MODE_MASK;
 	for ( int32_t i = 0; i < 2; ++i ) {
-		/* check if current position is autocommited if not,
-		   check that index is commited, current sequence is lower or equal last transaccion of same slot, if not,
-		   check if read in dirty read, F_CSTORAGE_FULL_DIRTY_READ reads dirty of his slot and others, F_CSTORAGE_DIRTY_READ only read dirty of his slot */
-		int32_t eval = 0;
-		if (((index.flags[i] & F_CSTORAGE_DF_AUTO_COMMIT) || ((eval = 1) == 0) || index.sequences[i] <= state.last_commit_sequences[index.slots[i]] || ((eval = 2) == 0) || 
-			((eval = 3) && dirtyRead  && (slot == index.slots[i] || dirtyRead == F_CSTORAGE_FULL_DIRTY_READ) && 
-			 (it = dirtySerials.find(serial)) != dirtySerials.end() && (dirtyRead == F_CSTORAGE_FULL_DIRTY_READ || (*it).second == index.slots[i]))) &&
-			lastseq <= index.sequences[i]) {
+		// check if current position is autocommited if not, check that index is commited, current sequence is lower or equal 
+		// last transaccion commited, if not, check if read in dirty read. Compare with lastseq to avoid read a old register.
+		if (index.sequences[i] >= lastseq && ((index.flags[i] & F_CSTORAGE_DF_AUTO_COMMIT) || 
+			index.sequences[i] <= state.last_commit_sequence || dirtyRead)) {
 			result = index.offsets[i];
 			lastseq = index.sequences[i];
 		}
 	}
-	C_LOG_INFO("0:[%02X, %d,%d,%lld,%d] 1:[%02X, %d,%d,%lld,%d] FLGS:%08X R:%lld", 
-		index.flags[0], index.slots[0], index.sequences[0], index.offsets[0], state.last_commit_sequences[index.slots[0]],
-		index.flags[1], index.slots[1], index.sequences[1], index.offsets[1], state.last_commit_sequences[index.slots[1]],
-		flags, result);
+	C_LOG_INFO("0:[%02X, %d,%lld] 1:[%02X, %d,%lld] S:%u FLGS:%08X R:%lld LCS:%u", 
+		index.flags[0], index.sequences[0], index.offsets[0], index.flags[1], index.sequences[1], index.offsets[1],
+		serial, flags, result, state.last_commit_sequence);
 	return result;
 }
 
@@ -1107,27 +1071,6 @@ int32_t CSafeStorage::goPos ( tserial_t serial, uint32_t flags  )
 	return E_CSTORAGE_OK;
 }
 
-/*
-int32_t CSafeStorage::readNext ( tserial_t &serial, void *data, uint32_t dlen, uint32_t flags ) 
-{
-	int32_t result;
-	while ((result = read(cursor+1, data, dlen, flags)) == E_CSTORAGE_SERIAL_NOT_FOUND);
-	serial = cursor;
-	return result;
-}
-*/
-
-int32_t CSafeStorage::setSlot ( tslot_t slot )
-{
-	this->slot = slot;
-	return E_CSTORAGE_OK;
-}
-
-tslot_t CSafeStorage::getSlot ( void )
-{
-	return slot;
-}
-
 int32_t CSafeStorage::getParam ( const string &name )
 {
 	if (name == "index_cache_size") return findex.getCacheSize();
@@ -1144,7 +1087,28 @@ int32_t CSafeStorage::setParam ( const string &name, int32_t value )
 	return 0;
 }
 
+int32_t CSafeStorage::createListener ( const string &params, ISafeStorageListener **ltn )
+{
+//    syslog(LOG_ERR | LOG_USER, "createListener(%s)", params.c_str());
+	return 0;
+}
+
+int32_t CSafeStorage::createReplica ( const string &params, ISafeStorageReplica **rpl )
+{
+//    syslog(LOG_ERR | LOG_USER, "createReplica(%s)", params.c_str());
+	return 0;
+}
+
+int32_t CSafeStorage::setCallback ( tsafestorage_callback_t cb )
+{
+//    syslog(LOG_ERR | LOG_USER, "setCallback");
+	cb(E_CB_REPLICA_FAIL, NULL);
+	return 0;
+}
+
 void CSafeStorage::findLastSignatureReg ( int32_t max_size )
 {
 	fdata.findLastSignatureReg(max_size, CSTORAGE_SIGNATURE, 0xFFFFFFFF ^ CSTORAGE_SIGNATURE_MASK, sizeof(uint32_t));
 }
+
+

@@ -33,7 +33,10 @@ using namespace std;
 #define O_CSTORAGE_BRIDGE_GET_PARAM           0x00000800
 #define O_CSTORAGE_BRIDGE_SET_PARAM           0x00001000
 #define O_CSTORAGE_BRIDGE_APPLY_LOG           0x00002000
-#define O_CSTORAGE_BRIDGE_GET_STATE           0x00004000
+#define O_CSTORAGE_BRIDGE_GET_INFO            0x00004000
+#define O_CSTORAGE_BRIDGE_CREATE_LISTENER     0x00008000
+#define O_CSTORAGE_BRIDGE_CREATE_REPLICA      0x00010000
+#define O_CSTORAGE_BRIDGE_SET_CALLBACK        0x00020000
                                               
 class CSafeStorageBridge: public ISafeStorage
 {
@@ -48,23 +51,22 @@ class CSafeStorageBridge: public ISafeStorage
 
         virtual int32_t close ( uint32_t flags = 0 ) 													{__BRIDGE_RET_STG_CALL(CLOSE, close(__BM_FLAGS));};
         virtual int32_t open ( const string &location, uint32_t flags = 0, uint32_t hash_key = 0 ) 		{__BRIDGE_RET_STG_CALL(OPEN, open(location, __BM_FLAGS, hash_key));};
-        virtual int32_t getState ( CSafeStorageState &state )											{__BRIDGE_RET_STG_CALL(GET_STATE, getState(state));};
+        virtual int32_t getInfo ( CSafeStorageInfo &info )											    {__BRIDGE_RET_STG_CALL(GET_INFO, getInfo(info));};
         virtual int32_t commit ( void ) 																{__BRIDGE_RET_STG_CALL(COMMIT, commit());};
         virtual int32_t rollback ( void ) 																{__BRIDGE_RET_STG_CALL(ROLLBACK, rollback());};
         virtual int32_t verify ( uint32_t flags = 0 ) 													{__BRIDGE_RET_STG_CALL(VERIFY, verify(__BM_FLAGS));};
         virtual int32_t write ( tserial_t serial, const void *data, uint32_t dlen, uint32_t flags = 0 ) {__BRIDGE_RET_STG_CALL(WRITE, write(serial, data, dlen, __BM_FLAGS));};
         virtual int32_t read ( tserial_t &serial, void *data, uint32_t dlen, uint32_t flags = 0 ) 		{__BRIDGE_RET_STG_CALL(READ, read(serial, data, dlen, __BM_FLAGS));};
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 ) {__BRIDGE_RET_STG_CALL(READ_LOG_REG, readLogReg(seq, serial, type, __BM_FLAGS));};
-        virtual int32_t readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *data, uint32_t dlen, uint32_t flags = 0 )								    
-																										{__BRIDGE_RET_STG_CALL(READ_LOG, readLog(seq, r_data, data,dlen, __BM_FLAGS));};
-        virtual int32_t applyLog ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen, uint32_t flags = 0 )								    				
-																										{__BRIDGE_RET_STG_CALL(APPLY_LOG, applyLog(r_data, data,dlen, __BM_FLAGS));};
+        virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 )			{__BRIDGE_RET_STG_CALL(READ_LOG, readLog(seq, data,dlen, __BM_FLAGS));};
+        virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 )				{__BRIDGE_RET_STG_CALL(APPLY_LOG, applyLog( data,dlen, __BM_FLAGS));};
 		virtual int32_t goTop ( uint32_t flags = 0 )													{__BRIDGE_RET_STG_CALL(GO_TOP, goTop(__BM_FLAGS));};
 		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 )									{__BRIDGE_RET_STG_CALL(GO_POS, goPos(serial, __BM_FLAGS));};
-//		virtual int32_t setFlags ( uint32_t flags = 0 )													{__BRIDGE_RET_STG_CALL(SET_FLAGS, setFlags(__BM_FLAGS));};
 		virtual int32_t getParam ( const string &name )													{__BRIDGE_RET_STG_CALL(GET_PARAM, getParam(name));};
 		virtual int32_t setParam ( const string &name, int32_t value )									{__BRIDGE_RET_STG_CALL(SET_PARAM, setParam(name, value));};
-	
+		virtual int32_t createListener ( const string &params, ISafeStorageListener **ltn )				{__BRIDGE_RET_STG_CALL(CREATE_LISTENER, createListener(params, ltn));};
+		virtual int32_t createReplica ( const string &params, ISafeStorageReplica **rpl )				{__BRIDGE_RET_STG_CALL(CREATE_REPLICA, createReplica(params, rpl));};
+		virtual int32_t setCallback( tsafestorage_callback_t cb )										{__BRIDGE_RET_STG_CALL(SET_CALLBACK, setCallback(cb));};
 };
 
 #endif /* __SAFE_STORAGE_BRIDGE_H__ */

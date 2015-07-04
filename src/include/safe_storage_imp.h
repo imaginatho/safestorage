@@ -38,11 +38,44 @@ using namespace std;
 #define D_CSTORAGE_DATA_DELTA_SIZE	(16*1024)
 #endif
 
+#ifndef C_DIRTY_SERIAL_SIZE
+#define C_DIRTY_SERIAL_SIZE (4*1024)
+#endif
+
+struct CSafeStorageDataReg
+{
+    uint32_t signature;
+    tserial_t serial;
+    tseq_t sequence;
+    int32_t len;
+    uint8_t flags;
+} __attribute__ ((packed));
+
+struct CSafeStorageState
+{
+    uint32_t hash_key;
+    uint32_t last_updated;
+    int32_t count;
+    int32_t commit_count;
+    int32_t rollback_begin_count;
+    int32_t rollback_end_count;
+    int32_t data_count;
+    int8_t last_offset_index;
+
+    tseq_t last_commit_sequence;
+    tseq_t last_rollback_sequence;
+    tseq_t last_close_sequence;
+    tseq_t last_sequence;
+
+    uint64_t last_close_offset;
+    uint64_t last_offsets[N_SS_LAST_OFFSETS];
+} __attribute__ ((packed));
+
+
 struct CSafeStorageLogReg
 {    
 	int64_t offset;
     tserial_t serial; 
-	tslot_t slot;
     uint8_t type;
 } __attribute__ ((packed));
 
@@ -50,12 +83,10 @@ struct CSafeStorageIndexReg
 {
     int64_t offsets[2];
     tseq_t sequences[2];
-	tslot_t slots[2];
     uint8_t flags[2];
 } __attribute__ ((packed));
 
 typedef list<CBaseSafeFile *> CBaseSafeFileList;
-typedef map<tserial_t,tslot_t> CSafeStorageSerialList;
 
 class CSafeStorage: public ISafeStorage
 {
@@ -65,10 +96,13 @@ class CSafeStorage: public ISafeStorage
         CSafeFile<CSafeStorageDataReg> fdata;
         CSafeFile<CSafeStorageDataReg> ftrans;
         CSafeFile<CSafeStorageState> fstate;
-        CSafeStorageSerialList dirtySerials;
+		
+		uint32_t dirtySerialIndex;
+		tserial_t *dirtySerials;
+		uint32_t dirtySerialSize;
+		
         tseq_t last_sequence;
 		tserial_t cursor;
-		tslot_t slot;
         CBaseSafeFileList files;
         CSafeStorageState state;
         int64_t last_offset;
@@ -91,6 +125,7 @@ class CSafeStorage: public ISafeStorage
         void writeSyncStateLogSync ( CSafeStorageLogReg &r_log );
         int64_t getLastOffset ( void );
 		void clearDirtySerials ( void );
+		void addDirtySerial ( tserial_t serial );
 		string normalizeFilename ( const string &filename );	
         int32_t getHashKey ( uint32_t &hash_key );
 
@@ -104,14 +139,12 @@ class CSafeStorage: public ISafeStorage
         static int32_t removeFiles ( const string &filename );
         void dumpState ( void );
 
-		int32_t setSlot ( tslot_t slot );
-		tslot_t getSlot ( void );
 		int32_t setFlags ( uint32_t flags );
 
         // ISafeStorage
         virtual int32_t close ( uint32_t flags = 0 );
         virtual int32_t open ( const string &filename, uint32_t flags = 0, uint32_t hash_key = 0 );
-        virtual int32_t getState ( CSafeStorageState &state );
+        virtual int32_t getInfo ( CSafeStorageInfo &info );
         virtual int32_t rebuild ( const string &filename, uint32_t flags = 0 );
         virtual int32_t commit ( void );
         virtual int32_t rollback ( void );
@@ -119,12 +152,17 @@ class CSafeStorage: public ISafeStorage
         virtual int32_t write ( tserial_t serial, const void *data, uint32_t dlen, uint32_t flags = 0 );
         virtual int32_t read ( tserial_t &serial, void *data, uint32_t dlen, uint32_t flags = 0 );
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 );
-        virtual int32_t readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *data, uint32_t dlen, uint32_t flags = 0 );
-        virtual int32_t applyLog ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen, uint32_t flags = 0 );
+        virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 );
+        virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 );
 		virtual int32_t goTop ( uint32_t flags = 0 );
 		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 );
 		virtual int32_t getParam ( const string &name );
 		virtual int32_t setParam ( const string &name, int32_t value );
+
+		virtual int32_t createListener ( const string &params, ISafeStorageListener **ltn );
+		virtual int32_t createReplica ( const string &params, ISafeStorageReplica **rpl );
+		virtual int32_t setCallback ( tsafestorage_callback_t cb );
+		
 		void findLastSignatureReg ( int32_t max_size );
 
 };

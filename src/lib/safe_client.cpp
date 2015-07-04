@@ -61,14 +61,14 @@ int32_t CSafeClient::commit ( void )
 	SEND_AND_RET_NET_REQ_RESP(req, resp)
 }
 
-int32_t CSafeClient::getState ( CSafeStorageState &state )
+int32_t CSafeClient::getInfo ( CSafeStorageInfo &info )
 {
-	DECLARE_NET_REQ_RESP(GET_STATE, req, resp)
+	DECLARE_NET_REQ_RESP(GET_INFO, req, resp)
 	C_LOG_TRACE("%s()", __FUNCTION__);
 
 	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp));
 	if (resp.result == 0) {
-		state = resp.state;
+		info = resp.info;
 	}
 	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
 	return resp.result;
@@ -126,7 +126,7 @@ int32_t CSafeClient::read ( tserial_t &serial, void *data, uint32_t dlen, uint32
 	return resp.result;
 }
 
-int32_t CSafeClient::readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *data, uint32_t dlen, uint32_t flags )
+int32_t CSafeClient::readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags )
 {
 	DECLARE_NET_REQ_RESP(READ_LOG, req, resp)
 	C_LOG_TRACE("%s(%u,..,%u,%08X)", __FUNCTION__, seq, dlen, flags);
@@ -136,20 +136,16 @@ int32_t CSafeClient::readLog ( tseq_t seq, CSafeStorageDataReg &r_data, void *da
 	req.flags = flags;
 
 	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp), data, &resp.result);
-	if (resp.result == 0) {
-		r_data = resp.reg;
-	}
 	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
 	return resp.result;
 }
 
 
-int32_t CSafeClient::applyLog ( CSafeStorageDataReg &r_data, const void *data, uint32_t dlen, uint32_t flags )
+int32_t CSafeClient::applyLog ( const void *data, uint32_t dlen, uint32_t flags )
 {
 	DECLARE_NET_REQ_RESP(APPLY_LOG, req, resp)
 	C_LOG_TRACE("%s(..,%u,%08X)", __FUNCTION__,  dlen, flags);
 
-	req.reg = r_data;
 	req.dlen = dlen;
 	req.flags = flags;
 

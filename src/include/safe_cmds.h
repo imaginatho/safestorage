@@ -15,7 +15,7 @@
 #define SAFE_CMD_GO_POS			12
 #define SAFE_CMD_GET_PARAM		13
 #define SAFE_CMD_SET_PARAM		14
-#define SAFE_CMD_GET_STATE		15
+#define SAFE_CMD_GET_INFO		15
 
 inline const char *safeCmd2String ( uint32_t cmd );
 
@@ -60,18 +60,18 @@ typedef struct
 	int32_t result;
 } __attribute__((packed)) CSAFE_NET_RESP_COMMIT;
 
-// GET_STATE
+// GET_INFO
 
 typedef struct
 {
 	uint8_t cmd;
-} __attribute__((packed)) CSAFE_NET_REQ_GET_STATE;
+} __attribute__((packed)) CSAFE_NET_REQ_GET_INFO;
 
 typedef struct
 {
 	int32_t result;
-	CSafeStorageState state;
-} __attribute__((packed)) CSAFE_NET_RESP_GET_STATE;
+	CSafeStorageInfo info;
+} __attribute__((packed)) CSAFE_NET_RESP_GET_INFO;
 
 // ROLLBACK
 
@@ -142,7 +142,6 @@ typedef struct
 typedef struct
 {
 	int32_t result;
-	CSafeStorageDataReg reg;
 } __attribute__((packed)) CSAFE_NET_RESP_READ_LOG;
 
 // APPLY_LOG
@@ -150,7 +149,6 @@ typedef struct
 typedef struct
 {
 	uint8_t cmd;
-	CSafeStorageDataReg reg;
 	uint32_t flags;
 	int32_t dlen;
 } __attribute__((packed)) CSAFE_NET_REQ_APPLY_LOG;
@@ -248,7 +246,7 @@ inline const char *safeCmd2String ( uint32_t cmd )
 		case SAFE_CMD_GET_PARAM:    return "SAFE_CMD_GET_PARAM";
 		case SAFE_CMD_SET_PARAM:    return "SAFE_CMD_SET_PARAM";
 		case SAFE_CMD_APPLY_LOG:    return "SAFE_CMD_APPLY_LOG";
-		case SAFE_CMD_GET_STATE:    return "SAFE_CMD_GET_STATE";
+		case SAFE_CMD_GET_INFO:     return "SAFE_CMD_GET_INFO";
 	}
 	return "SAFE_CMD_XXX";
 }

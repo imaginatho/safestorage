@@ -6,7 +6,7 @@
 
 #include <safe_storage_imp.h>
 
-ISafeStorage *createISafeStorage ( uint32_t flags )
+ISafeStorage *createISafeStorage ( uint32_t flags, uint32_t version )
 {
 	return new CSafeStorage();
 }

@@ -1,3 +1,15 @@
+/**
+ * \class COpenSafeStorage
+ * 
+ * \brief Class to share access to safestorage
+ * 
+ * Class description
+ * 
+ * 
+ * \author F.Barcelo
+ * 
+ */
+
 #ifndef __OPEN_SAFE_STORAGE__H__
 #define __OPEN_SAFE_STORAGE__H__
 
