@@ -7,7 +7,7 @@ This project was a implentation of master transactional log file, in other words
 ```C++
 int main ( int argc, char *argv[] )
 {
-  printf("%d\n", argc);
+  printf("test %d\n", argc);
 }
 ```
 
