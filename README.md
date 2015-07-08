@@ -4,7 +4,50 @@ This project was a implentation of master transactional log file, in other words
 
 ## Code Example
 
+This is an example to write 10 records
 ```C++
+	ISafeStorage *sfs = createISafeStorage();
+	if (sfs->open(argv[1], F_CSTORAGE_CREATE|F_CSTORAGE_WR) != E_CSTORAGE_OK) {
+		printf("ERROR opening/creating SFS file %s\n", argv[1]);
+		exit(-2);
+	}
+
+	int bytes = 0;
+	tserial_t key = 1;
+	
+	const char *records[N_RECORDS] = {"One 1", "Two 2", "Three 3", "Four 4", "Five 5", "Six 6", "Seven 7", "Eight 8", "Nine 9", "Ten 10"};
+	
+	while (key <= N_RECORDS) {
+		bytes = sfs->write(key, records[key-1], strlen(records[key-1])+1);
+		if (bytes > 0) {
+			printf("#%u[%d]:%s\n", key, bytes, records[key-1]);
+		}
+		++key;
+	}
+	sfs->commit();
+	sfs->close();
+```
+
+This is an example to read records
+```C++
+	ISafeStorage *sfs = createISafeStorage();
+	if (sfs->open(argv[1]) != E_CSTORAGE_OK) {
+		printf("ERROR opening SFS file %s\n", argv[1]);
+		exit(-2);
+	}
+
+	char data[1024];
+	int bytes = 0;
+	tserial_t key = 1;
+	
+	while (bytes >= 0) {
+		bytes = sfs->read(key, data, sizeof(data));
+		if (bytes >= 0) {
+			printf("#%u[%d]:%s\n", key, bytes, data);
+		}
+		++key;
+	}
+	sfs->close();
 ```
 
 ## Motivation

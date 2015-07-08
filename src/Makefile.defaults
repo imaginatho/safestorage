@@ -1,0 +1,14 @@
+SRCDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+LIBDIR=$(abspath $(SRCDIR)/../lib)
+INCDIR=$(abspath $(SRCDIR)/../include)
+
+CXX=g++44
+CXXFLAGS=-Wall -g -m32 -D_DEBUG_LEVEL_=3 -Iinclude -I$(INCDIR) -I$(SRCDIR)/include
+
+all: $(TARGET)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -L$(LIBDIR) -c $*.cpp -o $@
+
+clean:
+	rm *.o $(TARGET)	
