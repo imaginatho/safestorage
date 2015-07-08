@@ -12,12 +12,13 @@ using namespace std;
 
 #define F_CSFILE_WR             0x0001
 #define F_CSFILE_CREATE         0x0002
-#define F_CSFILE_DYNAMIC        0x0004
-#define F_CSFILE_EXCEPTIONS     0x0008
-#define F_CSFILE_AUTOSYNC       0x0010
-#define F_CSFILE_EMPTY_DATA     0x0020
-#define F_CSFILE_IGNORE_CRC     0x0040
-#define F_CSFILE_CHECK_FLAGS    0x0080
+#define F_CSFILE_TRUNCATE		0x0004
+#define F_CSFILE_DYNAMIC        0x0008
+#define F_CSFILE_EXCEPTIONS     0x0010
+#define F_CSFILE_AUTOSYNC       0x0020
+#define F_CSFILE_EMPTY_DATA     0x0040
+#define F_CSFILE_IGNORE_CRC     0x0080
+#define F_CSFILE_CHECK_FLAGS    0x0100
 
 #define C_CSFILE_ENDFILE   0x4000000000000000ULL
 #define C_CSFILE_CURRPOS   0x4000000000000001ULL
@@ -69,7 +70,6 @@ class CBaseSafeFile
 		int32_t max_data_size;
         int32_t flags;
 		int32_t delta_page;
-		uint8_t crc_zero_flag;
 		int32_t alignment;
         string filename;
 		char alias[MAX_BASE_SAFE_FILE_ALIAS_LEN+1];

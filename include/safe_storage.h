@@ -30,6 +30,15 @@ struct CSafeStorageInfo
 
 } __attribute__ ((packed));
 
+struct CSafeStorageLogInfo
+{
+    tserial_t serial;
+    tseq_t    sequence;
+    int32_t   len;
+    uint32_t  flags;
+    uint8_t   type;
+} __attribute__ ((packed));
+
 #define E_CSTORAGE_OK               				0
 #define E_CSTORAGE_ERROR           					-500
 #define E_CSTORAGE_OPEN             				-50
@@ -50,6 +59,7 @@ struct CSafeStorageInfo
 #define E_CSTORAGE_OPERATION_NOT_ALLOWED			-514
 #define E_CSTORAGE_OPERATION_NOT_IMPLEMENTED		-515
 #define E_CSTORAGE_NOT_ENOUGH_DATA					-516
+#define E_CSTORAGE_NOT_VALID_DATA					-517
 
 #define E_CSTORAGE_ONLT_ONE_WRITTER		-600
 
@@ -66,9 +76,6 @@ struct CSafeStorageInfo
 #define E_CSTORAGE_FAIL_HK_INDEX    0x0001
 #define E_CSTORAGE_FAIL_HK_STATE    0x0002
 #define E_CSTORAGE_FAIL_HK_LOG      0x0004
-
-#define CSTORAGE_SIGNATURE          0x51213298
-#define CSTORAGE_SIGNATURE_MASK     0x00000007
 
 #define T_CSTORAGE_COMMIT                 0x01
 #define T_CSTORAGE_WRITE                  0x02
@@ -120,6 +127,8 @@ class ISafeStorage
 		virtual int32_t createListener ( const std::string &params, ISafeStorageListener **ltn = NULL )	= 0;
 		virtual int32_t createReplica ( const std::string &params, ISafeStorageReplica **rpl = NULL ) = 0;	
 		virtual int32_t setCallback ( tsafestorage_callback_t cb ) = 0;
+		
+		static  int32_t getLogReg ( const void *data, uint32_t dlen, CSafeStorageLogInfo &linfo );
 };
 
 ISafeStorage *createISafeStorage ( uint32_t flags = F_CSTORAGE_STD_INSTANCE, uint32_t version = SAFE_STORAGE_VERSION );

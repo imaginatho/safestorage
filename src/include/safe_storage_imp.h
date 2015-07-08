@@ -13,6 +13,10 @@ using namespace std;
 #include <safe_file.h>
 #include <safe_storage.h>
 
+#define CSTORAGE_SIGNATURE          	0x51213298
+#define CSTORAGE_SIGNATURE_TYPE_MASK    0x00000007
+#define CSTORAGE_SIGNATURE_SIGN_MASK    0xFFFFFFF8
+
 #define D_CSTORAGE_INDEX_CACHE		0
 #define D_CSTORAGE_LOG_CACHE		0
 

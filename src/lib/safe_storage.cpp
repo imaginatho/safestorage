@@ -237,7 +237,7 @@ int32_t CSafeStorage::create ( const string &filename, uint32_t flags, uint32_t 
         CBaseSafeFileList::iterator it = files.begin();
         int32_t index = 0;
         
-		uint32_t nflags = flags | (F_CSFILE_EXCEPTIONS|F_CSFILE_CREATE|F_CSFILE_WR);
+		uint32_t nflags = flags | (F_CSFILE_EXCEPTIONS|F_CSFILE_CREATE|F_CSFILE_WR|F_CSFILE_TRUNCATE);
         // list of files is created on constructor, array _safe_storage_extensions
         // contains extension for each type of file
         while (it != files.end())
@@ -1038,7 +1038,7 @@ int64_t CSafeStorage::getLastOffset ( CSafeStorageIndexReg &index, tserial_t ser
 	int64_t result = -1;
 	tseq_t lastseq = 0;
 
-	uint32_t dirtyRead = flags & F_CSTORAGE_READ_MODE_MASK;
+	uint32_t dirtyRead = (flags & F_CSTORAGE_READ_MODE_MASK) || rdwr;
 	for ( int32_t i = 0; i < 2; ++i ) {
 		// check if current position is autocommited if not, check that index is commited, current sequence is lower or equal 
 		// last transaccion commited, if not, check if read in dirty read. Compare with lastseq to avoid read a old register.
@@ -1048,9 +1048,9 @@ int64_t CSafeStorage::getLastOffset ( CSafeStorageIndexReg &index, tserial_t ser
 			lastseq = index.sequences[i];
 		}
 	}
-	C_LOG_INFO("0:[%02X, %d,%lld] 1:[%02X, %d,%lld] S:%u FLGS:%08X R:%lld LCS:%u", 
+	C_LOG_INFO("0:[%02X, %d,%lld] 1:[%02X, %d,%lld] S:%u FLGS:%08X R:%lld LCS:%u RDWR:%d", 
 		index.flags[0], index.sequences[0], index.offsets[0], index.flags[1], index.sequences[1], index.offsets[1],
-		serial, flags, result, state.last_commit_sequence);
+		serial, flags, result, state.last_commit_sequence, rdwr);
 	return result;
 }
 
@@ -1084,31 +1084,52 @@ int32_t CSafeStorage::setParam ( const string &name, int32_t value )
 	else if (name == "log_cache_size") flog.setCacheSize(value);
 	else if (name == "c_log_level") c_log_set_level(value);
 	else return -1;
-	return 0;
+	return E_CSTORAGE_OK;
 }
 
 int32_t CSafeStorage::createListener ( const string &params, ISafeStorageListener **ltn )
 {
 //    syslog(LOG_ERR | LOG_USER, "createListener(%s)", params.c_str());
-	return 0;
+	return E_CSTORAGE_OK;
 }
 
 int32_t CSafeStorage::createReplica ( const string &params, ISafeStorageReplica **rpl )
 {
 //    syslog(LOG_ERR | LOG_USER, "createReplica(%s)", params.c_str());
-	return 0;
+	return E_CSTORAGE_OK;
 }
 
 int32_t CSafeStorage::setCallback ( tsafestorage_callback_t cb )
 {
 //    syslog(LOG_ERR | LOG_USER, "setCallback");
 	cb(E_CB_REPLICA_FAIL, NULL);
-	return 0;
+	return E_CSTORAGE_OK;
 }
 
 void CSafeStorage::findLastSignatureReg ( int32_t max_size )
 {
-	fdata.findLastSignatureReg(max_size, CSTORAGE_SIGNATURE, 0xFFFFFFFF ^ CSTORAGE_SIGNATURE_MASK, sizeof(uint32_t));
+	fdata.findLastSignatureReg(max_size, CSTORAGE_SIGNATURE, CSTORAGE_SIGNATURE_SIGN_MASK, sizeof(uint32_t));
 }
 
+		
+int32_t ISafeStorage::getLogReg ( const void *data, uint32_t dlen, CSafeStorageLogInfo &linfo )
+{
+	if (sizeof(CSafeStorageDataReg) > dlen) {
+		return E_CSTORAGE_NOT_VALID_DATA;
+	}
+	
+	const CSafeStorageDataReg *dreg = (const CSafeStorageDataReg *)data;
+	if ((dreg->signature & CSTORAGE_SIGNATURE_SIGN_MASK) != CSTORAGE_SIGNATURE) {
+		return E_CSTORAGE_NOT_VALID_DATA;
+	}
+
+	memset(&linfo, 0, sizeof(linfo));
+	linfo.sequence = dreg->sequence;
+	linfo.serial = dreg->serial;
+	linfo.type = (dreg->signature & CSTORAGE_SIGNATURE_TYPE_MASK);
+	linfo.len = dreg->len;
+	linfo.flags = dreg->flags;
+	
+	return E_CSTORAGE_OK;
+}
 

@@ -2,8 +2,12 @@ SRCDIR=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 LIBDIR=$(abspath $(SRCDIR)/../lib)
 INCDIR=$(abspath $(SRCDIR)/../include)
 
+ifndef MODULES
+MODULES=$(TARGET).o
+endif
+
 CXX=g++44
-CXXFLAGS=-Wall -g -m32 -D_DEBUG_LEVEL_=3 -Iinclude -I$(INCDIR) -I$(SRCDIR)/include
+CXXFLAGS=-Wall -g -m32 -D_DEBUG_LEVEL_=5 -Iinclude -I$(INCDIR) -I$(SRCDIR)/include
 
 all: $(TARGET)
 

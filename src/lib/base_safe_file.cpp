@@ -189,6 +189,8 @@ int32_t CBaseSafeFile::open ( const string &filename, uint32_t flags, uint32_t p
     // setting system call flags
     if (f_write_mode) _flags |= (O_NOATIME|O_RDWR);
     else _flags |= (O_RDONLY|O_NOATIME);
+	
+	if (f_write_mode && (flags & F_CSFILE_TRUNCATE)) _flags |= (O_TRUNC|O_CREAT);
 
     // this loop was implemented because first try to open file, without create
     // if it's not possible (error ENOENT), loop again to create file.
@@ -468,6 +470,7 @@ int32_t CBaseSafeFile::read ( int64_t loff, uint32_t _flags, CDataArray  &darray
         	// not stored) are allowed. If flag F_CSFILE_EMPTY_DATA is present produce
         	// an EMPTY_DATA error, otherwise could produce a CRC error.
 
+			bool crc_zero_flag = memzero(work_area, len);
             if (crc_zero_flag && !dcrc && (_flags & F_CSFILE_EMPTY_DATA))
                 throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
 

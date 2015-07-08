@@ -294,4 +294,30 @@ uint32_t crc32 ( const void* data, size_t bytes, uint32_t initcrc )
 	return ~crc;
 }
 
+
+bool memzero ( const void* data, size_t bytes )
+{
+	const uint32_t *cur32b  = (const uint32_t*) data;
+
+	while (bytes >= 128)
+	{
+		for (uint32_t unroll = 0; unroll < 32; unroll++) if (*cur32b++) return false;
+		bytes -= 128;
+	}
+
+	while (bytes >= 4)
+	{
+		if (*cur32b++) return false;
+		bytes -= 4;
+	}
+	
+	const uint8_t* cur8b = (const uint8_t*) cur32b;
+	const uint8_t* end_cur8b = cur8b + bytes;
+	while (cur8b < end_cur8b) {	
+		if (*cur8b++) return false;
+	}
+
+	return true;
+}
+
 #undef CRC_BLOCK

@@ -27,6 +27,7 @@ const char *strbacktrace ( int32_t levels, char *data, int dlen )
 		data = tdata;
 		dlen = sizeof(tdata)-1;
 	}
+	*data = '\0';
 	--dlen;
 
 	size = backtrace (array, levels > 64 ? 64 : levels);
@@ -55,7 +56,6 @@ const char *strbacktrace ( int32_t levels, char *data, int dlen )
 		}
 		ppos = pos;
 	}
-
 	free (strings);
 	return data;
 }
