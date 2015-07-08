@@ -15,7 +15,8 @@ This is an example to write 10 records
 	int bytes = 0;
 	tserial_t key = 1;
 	
-	const char *records[N_RECORDS] = {"One 1", "Two 2", "Three 3", "Four 4", "Five 5", "Six 6", "Seven 7", "Eight 8", "Nine 9", "Ten 10"};
+	const char *records[N_RECORDS] = {"One 1", "Two 2", "Three 3", "Four 4", "Five 5", 
+									  "Six 6", "Seven 7", "Eight 8", "Nine 9", "Ten 10"};
 	
 	while (key <= N_RECORDS) {
 		bytes = sfs->write(key, records[key-1], strlen(records[key-1])+1);
