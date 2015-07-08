@@ -1,6 +1,6 @@
-TARGET=read_example
+TARGET=$(BINDIR)/read_example
 
-MODULES=$(TARGET).o
+MODULES=read_example.o
 
 include ../../Makefile.defaults
 

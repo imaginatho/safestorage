@@ -1,6 +1,6 @@
-TARGET=write_example
+TARGET=$(BINDIR)/write_example
 
-MODULES=$(TARGET).o
+MODULES=write_example.o
 
 include ../../Makefile.defaults
 

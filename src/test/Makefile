@@ -1,4 +1,6 @@
-TARGET=safe_test
+TARGET=$(BINDIR)/safe_test
+
+MODULES=safe_test.o
 
 include ../Makefile.defaults
 
