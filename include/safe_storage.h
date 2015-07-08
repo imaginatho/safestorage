@@ -95,14 +95,14 @@ class ISafeStorageListener
 {
 	public:
 		virtual ~ISafeStorageListener ( void ) {};
-		virtual int32_t stop();
+		virtual int32_t stop ( void ) = 0;
 };
 
 class ISafeStorageReplica 
 {
 	public:
 		virtual ~ISafeStorageReplica ( void ) {};
-		virtual int32_t stop();
+		virtual int32_t stop ( void ) = 0;
 };
 
 class ISafeStorage

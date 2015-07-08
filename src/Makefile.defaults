@@ -16,4 +16,4 @@ all: $(TARGET)
 	$(CXX) $(CXXFLAGS) -L$(LIBDIR) -c $*.cpp -o $@
 
 clean:
-	rm *.o $(TARGET)	
+	rm -f *.o $(TARGET)	
