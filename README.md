@@ -5,10 +5,6 @@ This project was a implentation of master transactional log file, in other words
 ## Code Example
 
 ```C++
-int main ( int argc, char *argv[] )
-{
-  printf("test2: %d\n", argc);
-}
 ```
 
 ## Motivation
