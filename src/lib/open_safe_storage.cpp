@@ -12,7 +12,7 @@
 #include <exception>
 using namespace std;
 
-#include <c_log.h>
+#include <log.h>
 #include <open_safe_storage.h>
 
 COpenSafeStorage::COpenSafeStorage ( const string &realPath )

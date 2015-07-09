@@ -5,9 +5,6 @@
  * 
  * Class description
  * 
- * 
- * \author F.Barcelo
- * 
  */
 
 #ifndef __OPEN_SAFE_STORAGE__H__
@@ -21,7 +18,6 @@ using namespace std;
 
 class COpenSafeStorage;
 
-#include <safe_exception.h>
 #include <base_safe_file.h>
 #include <safe_file.h>
 #include <safe_storage_imp.h>

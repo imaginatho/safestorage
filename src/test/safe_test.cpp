@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <c_log.h>
+#include <log.h>
 #include <safe_storage.h>
 #include <math.h>
 

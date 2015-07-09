@@ -89,6 +89,8 @@ struct CSafeStorageLogInfo
 
 #define E_CB_REPLICA_FAIL					-1000
 
+#define CSTORAGE_METHOD_NOT_IMPL		{ return E_CSTORAGE_OPERATION_NOT_IMPLEMENTED; }
+
 typedef int32_t (* tsafestorage_callback_t)(int32_t, void *);
 
 class ISafeStorageListener

@@ -14,7 +14,7 @@
 #include <string>
 using namespace std;
 
-#include <c_log.h>
+#include <log.h>
 #include <safe_storage_imp.h>
 #include <safe_client.h>
 #include <safe_proxy.h>
@@ -68,7 +68,8 @@ bool CSafeProxy::prepareStorage ( const string &location, string &normalized )
 		std::replace(aux.begin(), aux.end(), ':', ' ');
 		string params = aux.substr(0, dotpos);
 		printf("PARAMS = '%s'\n", params.c_str());
-		storage = new CSafeClient(105, params.c_str());
+		// storage = new CSafeClient(105, params.c_str());
+		storage = new CSafeClient();
 		normalized = location.substr(dotpos+1);
 	}
 	else {
@@ -76,13 +77,4 @@ bool CSafeProxy::prepareStorage ( const string &location, string &normalized )
 		normalized = location;
 	}
 	return true;
-}
-
-int32_t CSafeProxy::create ( const string &location, uint32_t flags )
-{
-	string normalized;
-	if (!prepareStorage(location, normalized))
-		return E_CSTORAGE_ALREADY_OPENED;
-
-	return storage->create(normalized, flags);
 }

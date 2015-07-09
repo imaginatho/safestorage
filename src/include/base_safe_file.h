@@ -8,7 +8,7 @@ using namespace std;
 #define PLAST_U32(P,L) (uint32_t *)(((uint8_t *)P)+(L-4)) 
 
 #include <data_array.h>
-#include <safe_exception.h>
+#include <exception.h>
 
 #define F_CSFILE_WR             0x0001
 #define F_CSFILE_CREATE         0x0002

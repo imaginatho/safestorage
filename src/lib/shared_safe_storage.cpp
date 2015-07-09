@@ -12,7 +12,7 @@
 #include <exception>
 using namespace std;
 
-#include <c_log.h>
+#include <log.h>
 #include <shared_safe_storage.h>
 
 #define F_SHARED_SS_WRITE_OPS (O_CSTORAGE_BRIDGE_COMMIT | O_CSTORAGE_BRIDGE_ROLLBACK | O_CSTORAGE_BRIDGE_WRITE)

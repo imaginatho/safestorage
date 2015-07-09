@@ -33,6 +33,9 @@ class CSafeClient: public ISafeStorage
 		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 );
 		virtual int32_t getParam ( const string &name );
 		virtual int32_t setParam ( const string &name, int32_t value );
+		virtual int32_t createListener ( const string &params, ISafeStorageListener **ltn = NULL ) 	CSTORAGE_METHOD_NOT_IMPL;
+		virtual int32_t createReplica ( const string &params, ISafeStorageReplica **rpl = NULL ) 	CSTORAGE_METHOD_NOT_IMPL;
+		virtual int32_t setCallback ( tsafestorage_callback_t cb ) 									CSTORAGE_METHOD_NOT_IMPL;		
 };
 
 #endif

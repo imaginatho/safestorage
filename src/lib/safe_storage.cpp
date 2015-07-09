@@ -13,7 +13,7 @@
 #include <exception>
 using namespace std;
 
-#include <c_log.h>
+#include <log.h>
 #include <safe_storage_imp.h>
 
 static const char *__safe_storage_extensions [] = {"", ".idx", ".rlg", ".st"};
@@ -164,7 +164,7 @@ int32_t CSafeStorage::open ( const string &filename, uint32_t flags, uint32_t ha
         // check if hash of all files it's the same.
         int32_t result = checkHashKey();
         if (result != E_CSTORAGE_OK)
-        	throw CSAFE_EXCEPTION_CODE(result);
+        	CEXP_CODE(result);
 
         if (flags & F_CSTORAGE_AUTO_COMMIT) {
 			C_LOG_INFO("Setting autocommit on (flgs:%08X)", flags);
@@ -172,12 +172,12 @@ int32_t CSafeStorage::open ( const string &filename, uint32_t flags, uint32_t ha
 		}
 
     }
-    catch (const CSafeException &e)
+    catch (const CException &e)
     {
     	// if error found, all files must be closed
-        C_LOG_ERR("e.getErrorCode()=%d", e.getErrorCode());
+        C_LOG_ERR("e.getResult()=%d", e.getResult());
         close();
-        return e.getErrorCode(); 
+        return e.getResult(); 
     }
     return E_CSTORAGE_OK;
 }
@@ -262,12 +262,12 @@ int32_t CSafeStorage::create ( const string &filename, uint32_t flags, uint32_t 
         	fauto_commit = true;
 		}
     }
-    catch (CSafeException &e)
+    catch (CException &e)
     {
     	// if error found, all files must be closed
-        C_LOG_ERR("CSafeException %d on %s:%d", e.code(), e.file().c_str(), e.line());
+        C_LOG_ERR("CException %d on %s:%d", e.getResult(), e.getFile(), e.getLine());
     	close();
-        return e.getErrorCode(); 
+        return e.getResult(); 
     }
     return 0;
 }

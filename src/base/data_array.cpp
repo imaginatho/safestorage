@@ -8,7 +8,7 @@
 #include <exception>
 #include <iostream>
 #include <sstream>
-#include <c_log.h>
+#include <log.h>
 
 using namespace std;
 

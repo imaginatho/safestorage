@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <stdio.h>
 
 #include <string>
 #include <list>
@@ -262,8 +264,8 @@ int main ( int argc, char *argv[] )
 	if (argc != 2) exit(-1);
 	CIniFile ini(argv[1]);
 	
-	char *params[6]	= { "param1", "param2", "param3", "param4", "parastr5", "p10" };
-	char *groups[3] = { "", "group-1", "group-2" };
+	const char *params[6]	= { "param1", "param2", "param3", "param4", "parastr5", "p10" };
+	const char *groups[3] = { "", "group-1", "group-2" };
 	for(int index = -1; index < 6; ++index) {
 		printf("%10s", index < 0 ? "": params[index]);
 		for (int ig = 0; ig < 3; ++ig ) {

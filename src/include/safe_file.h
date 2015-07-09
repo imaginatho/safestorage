@@ -2,8 +2,8 @@
 #define __SAFE_FILE__H__
 
 #include <base_safe_file.h>
-#include <safe_exception.h>
-#include <c_log.h>
+#include <exception.h>
+#include <log.h>
 #include <typeinfo>
 
 template <class R>

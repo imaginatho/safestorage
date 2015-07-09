@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include <c_log.h>
+#include <log.h>
 #include <safe_client.h>
 #include <safe_cmds.h>
 
