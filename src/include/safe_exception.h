@@ -25,5 +25,8 @@ class CSafeException: exception
         string msg ( void ) const { return _message; };
 };
 
+#define CSAFE_EXCEPTION_CODE(X) CSafeException(__FILE__,__LINE__, X);
+#define CSAFE_EXCEPTION(X,...) 	CSafeException(__FILE__,__LINE__, X, __VA_ARGS__);
+
 #endif
 

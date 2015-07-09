@@ -164,7 +164,7 @@ int32_t CSafeStorage::open ( const string &filename, uint32_t flags, uint32_t ha
         // check if hash of all files it's the same.
         int32_t result = checkHashKey();
         if (result != E_CSTORAGE_OK)
-        	throw CSafeException(__FILE__, __LINE__, result);
+        	throw CSAFE_EXCEPTION_CODE(result);
 
         if (flags & F_CSTORAGE_AUTO_COMMIT) {
 			C_LOG_INFO("Setting autocommit on (flgs:%08X)", flags);
