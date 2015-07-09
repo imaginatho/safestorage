@@ -15,7 +15,8 @@ class CSafeException: exception
         string _file;
         string _message;
     public:
-        CSafeException ( const string &sourcefile, uint32_t line, int32_t eCode ) throw();
+        CSafeException ( const char *sourcefile, uint32_t line, int32_t eCode ) throw();
+        CSafeException ( const char *sourcefile, uint32_t line, int32_t eCode, const char *fmt, ... ) throw();
         virtual ~CSafeException ( void ) throw();
         virtual const char *what () const throw();
         int32_t getErrorCode ( void ) const { return _code; };
