@@ -13,10 +13,11 @@ using namespace std;
 class CSafeStorageListener: public ISafeStorageListener
 {
     protected:
-
+		int sfd;
+		
     public:
         CSafeStorageListener ( void );
-        virtual ~CSafeStorageListener ();
+        virtual ~CSafeStorageListener ( void );
 		
 		virtual int32_t stop ( void );
 };

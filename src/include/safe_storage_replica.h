@@ -16,7 +16,7 @@ class CSafeStorageReplica: public ISafeStorageReplica
 
     public:
         CSafeStorageReplica ( void );
-        virtual ~CSafeStorageReplica ();
+        virtual ~CSafeStorageReplica ( void );
 		
 		virtual int32_t stop ( void );
 };
