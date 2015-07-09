@@ -1,5 +1,5 @@
-#ifndef __SAFE_FILE_EXCEPTION__H__
-#define __SAFE_FILE_EXCEPTION__H__
+#ifndef __SAFE_EXCEPTION__H__
+#define __SAFE_EXCEPTION__H__
 
 #include <stdint.h>
 #include <string>
@@ -7,7 +7,7 @@
 
 using namespace std;
 
-class CSafeFileException: exception 
+class CSafeException: exception 
 {
     protected:
         int32_t _code;
@@ -15,8 +15,8 @@ class CSafeFileException: exception
         string _file;
         string _message;
     public:
-        CSafeFileException ( const string &sourcefile, uint32_t line, int32_t eCode ) throw();
-        virtual ~CSafeFileException ( void ) throw();
+        CSafeException ( const string &sourcefile, uint32_t line, int32_t eCode ) throw();
+        virtual ~CSafeException ( void ) throw();
         virtual const char *what () const throw();
         int32_t getErrorCode ( void ) const { return _code; };
         int32_t code ( void ) const { return _code; };

@@ -7,7 +7,7 @@
 #include <set>
 using namespace std;
 
-#include <safe_file_exception.h>
+#include <safe_exception.h>
 #include <base_safe_file.h>
 #include <safe_file.h>
 #include <safe_storage_bridge.h>

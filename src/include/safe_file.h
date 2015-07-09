@@ -2,7 +2,7 @@
 #define __SAFE_FILE__H__
 
 #include <base_safe_file.h>
-#include <safe_file_exception.h>
+#include <safe_exception.h>
 #include <c_log.h>
 #include <typeinfo>
 

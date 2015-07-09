@@ -15,7 +15,7 @@
 using namespace std;
 
 #include <base_safe_file.h>
-#include <safe_file_exception.h>
+#include <safe_exception.h>
 #include <data_array.h>
 #include <c_log.h>
 #include <crc32.h>
@@ -54,7 +54,7 @@ CBaseSafeFile::CBaseSafeFile ( uint32_t flags, int32_t cache_size, int32_t max_d
  */
 CBaseSafeFile::CBaseSafeFile ( const CBaseSafeFile &from )
 {
-    throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_COPY_NOT_ALLOWED);
+    throw CSafeException(__FILE__,__LINE__, E_CSFILE_COPY_NOT_ALLOWED);
 }
 
 /**
@@ -203,7 +203,7 @@ int32_t CBaseSafeFile::open ( const string &filename, uint32_t flags, uint32_t p
             if ((!(flags & F_CSFILE_CREATE) || (_flags & O_CREAT)) && errno == ENOENT)
             {
                 if (flags & F_CSFILE_EXCEPTIONS) 
-                    throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_OPEN_FILE);  
+                    throw CSafeException(__FILE__,__LINE__, E_CSFILE_OPEN_FILE);  
                 return E_CSFILE_OPEN_FILE;
             }
 
@@ -362,7 +362,7 @@ int32_t CBaseSafeFile::write ( int64_t loff, uint32_t _flags, const CDataArray &
 			}
 		}
     }
-    catch (CSafeFileException &e)
+    catch (CSafeException &e)
     {
         if (_flags & F_CSFILE_EXCEPTIONS) throw;
         return e.getErrorCode();
@@ -472,14 +472,14 @@ int32_t CBaseSafeFile::read ( int64_t loff, uint32_t _flags, CDataArray  &darray
 
 			bool crc_zero_flag = memzero(work_area, len);
             if (crc_zero_flag && !dcrc && (_flags & F_CSFILE_EMPTY_DATA))
-                throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
+                throw CSafeException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
 
             // if flag F_CSFILE_IGNORE_CRC ignore this CRC fail, and continue, otherwise
             // generate an exception.
             if (!(_flags & F_CSFILE_IGNORE_CRC))
             {
                 C_LOG_WARN("[%s] fails CRC dcrc:%08X crc:%08X crc_zero_flag:%d", alias, dcrc, crc, crc_zero_flag);
-                throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_CRC);
+                throw CSafeException(__FILE__,__LINE__, E_CSFILE_CRC);
             }
         }
 
@@ -487,7 +487,7 @@ int32_t CBaseSafeFile::read ( int64_t loff, uint32_t _flags, CDataArray  &darray
         C_LOG_DEBUG("[%s] darray.setFromBuffer(%p, %d) [%s]", alias, work_area + pdataOffset, len, darray.debug().c_str() );
         darray.setFromBuffer(work_area + pdataOffset, len);
     }
-    catch (CSafeFileException &e)
+    catch (CSafeException &e)
     {
         C_LOG_DEBUG("[%s] EXCEPTION: %s", alias, e.what());
 
@@ -514,7 +514,7 @@ int32_t CBaseSafeFile::fillWorkArea ( int32_t len, const CDataArray &darray, int
 	
 	if (darray.size() > (work_area_size-len)) {
 		C_LOG_ERR("try to write data too big dlen:%d maxdlen:%d on [%s]", darray.size(), max_data_size, alias);
-		throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_DATA_TOO_BIG);
+		throw CSafeException(__FILE__,__LINE__, E_CSFILE_DATA_TOO_BIG);
 	}
 
     // write a array of data on working area, starting on len, function returns
@@ -589,7 +589,7 @@ int64_t CBaseSafeFile::writeWorkArea ( int64_t loff, int32_t len, int32_t skip, 
     if (_loff < 0)
     {
     	C_LOG_ERR("invalid offset loff=%lld len=%d skip=%d errno=%d %s", loff, len, skip, errno, strerror(errno));
-        throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_WRITE_SEEK);
+        throw CSafeException(__FILE__,__LINE__, E_CSFILE_WRITE_SEEK);
     }
             
     // substract of len skipped bytes and write information in file (disk)
@@ -601,7 +601,7 @@ int64_t CBaseSafeFile::writeWorkArea ( int64_t loff, int32_t len, int32_t skip, 
     if (bytes != len)
     {
     	C_LOG_ERR("write fails fd=%d skip=%d len=%d, errno=%d %s", fd, skip, len, errno, strerror(errno));
-        throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_WRITE);
+        throw CSafeException(__FILE__,__LINE__, E_CSFILE_WRITE);
     }
 
     // check if this write was synchronous
@@ -674,7 +674,7 @@ int64_t CBaseSafeFile::seek ( int64_t loff, int32_t len, bool write )
     int64_t _loff;  
 
 	if (fd < 0) {
-        throw CSafeFileException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
+        throw CSafeException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
 	}
     // obtain current offset and override this position in loff
     if (loff == C_CSFILE_CURRPOS)
@@ -687,7 +687,7 @@ int64_t CBaseSafeFile::seek ( int64_t loff, int32_t len, bool write )
     // check if seek operation found errors
     if (_loff < 0)
     {
-        throw CSafeFileException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
+        throw CSafeException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
     }
 
     // in case that you want to go to end of file, setting loff with end of file
@@ -700,7 +700,7 @@ int64_t CBaseSafeFile::seek ( int64_t loff, int32_t len, bool write )
     if ( (loff+(int64_t)len) > _loff && !f_write_mode )
     {
         C_LOG_DEBUG("[%s] seek EOF flags = %08X (%lld,%d) > %lld", alias, flags, loff, len, _loff);
-        throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_EOF);
+        throw CSafeException(__FILE__,__LINE__, E_CSFILE_EOF);
     }
 
     // if loff same than _loff (end of file), not need to seek, because previous lines
@@ -713,7 +713,7 @@ int64_t CBaseSafeFile::seek ( int64_t loff, int32_t len, bool write )
     // check if seek operation found errors
     if (_loff < 0)
     {
-        throw CSafeFileException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
+        throw CSafeException(__FILE__,__LINE__, write ? E_CSFILE_WRITE_SEEK:E_CSFILE_READ_SEEK);
     }
     return _loff;
 }
@@ -803,9 +803,9 @@ int64_t CBaseSafeFile::readWorkArea ( int64_t loff, uint32_t flags, int32_t len,
             len -= clen;            
         } // end of loop
         if (len > 0 && bytes == 0)
-        	throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
+        	throw CSafeException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
         if (len > 0)
-            throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_READ);
+            throw CSafeException(__FILE__,__LINE__, E_CSFILE_READ);
     }
     else // (cache_size <= 0)
     {
@@ -814,10 +814,10 @@ int64_t CBaseSafeFile::readWorkArea ( int64_t loff, uint32_t flags, int32_t len,
         bytes = ::read(fd, work_area+skip, len);
 
         if (bytes == 0)
-        	throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
+        	throw CSafeException(__FILE__,__LINE__, E_CSFILE_EMPTY_DATA);
         if (bytes != len) {
             C_LOG_ERR("[%s] bytes(%d)!=len(%d)", alias, bytes, len);
-            throw CSafeFileException(__FILE__,__LINE__, E_CSFILE_READ);
+            throw CSafeException(__FILE__,__LINE__, E_CSFILE_READ);
         }
         _loff += bytes;
     }

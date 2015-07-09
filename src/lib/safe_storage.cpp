@@ -164,7 +164,7 @@ int32_t CSafeStorage::open ( const string &filename, uint32_t flags, uint32_t ha
         // check if hash of all files it's the same.
         int32_t result = checkHashKey();
         if (result != E_CSTORAGE_OK)
-        	throw CSafeFileException(__FILE__, __LINE__, result);
+        	throw CSafeException(__FILE__, __LINE__, result);
 
         if (flags & F_CSTORAGE_AUTO_COMMIT) {
 			C_LOG_INFO("Setting autocommit on (flgs:%08X)", flags);
@@ -172,7 +172,7 @@ int32_t CSafeStorage::open ( const string &filename, uint32_t flags, uint32_t ha
 		}
 
     }
-    catch (const CSafeFileException &e)
+    catch (const CSafeException &e)
     {
     	// if error found, all files must be closed
         C_LOG_ERR("e.getErrorCode()=%d", e.getErrorCode());
@@ -262,10 +262,10 @@ int32_t CSafeStorage::create ( const string &filename, uint32_t flags, uint32_t 
         	fauto_commit = true;
 		}
     }
-    catch (CSafeFileException &e)
+    catch (CSafeException &e)
     {
     	// if error found, all files must be closed
-        C_LOG_ERR("CSafeFileException %d on %s:%d", e.code(), e.file().c_str(), e.line());
+        C_LOG_ERR("CSafeException %d on %s:%d", e.code(), e.file().c_str(), e.line());
     	close();
         return e.getErrorCode(); 
     }
