@@ -1,23 +1,27 @@
-all: lib/libsafestorage.so bin/safe_test bin/read_example bin/write_example
+all: libsafestorage safe_test read_example write_example
 
-lib/libsafestorage.so:
+libsafestorage:
 	@echo -e "\x1B[34m############## compiling libsafestorage ##############\x1B[0m"
-	(cd src/lib && make)
+	@(cd src/lib && make)
 
-bin/safe_test:
+safe_test:
 	@echo -e "\x1B[34m############## compiling safe_test ##############\x1B[0m"
-	(cd src/test && make)
+	@(cd src/test && make)
 
-bin/read_example:
+read_example:
 	@echo -e "\x1B[34m############## compiling read_example ##############\x1B[0m"
-	(cd src/examples/read && make)
+	@(cd src/examples/read && make)
 
-bin/write_example:
+write_example:
 	@echo -e "\x1B[34m############## compiling write_example ##############\x1B[0m"
-	(cd src/examples/write && make)
+	@(cd src/examples/write && make)
 	
 clean:
-	(cd src/lib && make clean)
-	(cd src/test && make clean)
-	(cd src/examples/read && make clean)
-	(cd src/examples/write && make clean)
+	@echo -e "\x1B[34m############## cleaning libsafestorage ##############\x1B[0m"
+	@(cd src/lib && make clean)
+	@echo -e "\x1B[34m############## cleaning safe_test ##############\x1B[0m"
+	@(cd src/test && make clean)
+	@echo -e "\x1B[34m############## cleaning read_example ##############\x1B[0m"
+	@(cd src/examples/read && make clean)
+	@echo -e "\x1B[34m############## cleaning write_example ##############\x1B[0m"
+	@(cd src/examples/write && make clean)
