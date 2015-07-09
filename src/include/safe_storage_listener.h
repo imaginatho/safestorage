@@ -10,13 +10,16 @@ using namespace std;
 
 #include <safe_storage.h>
 
+#define E_CSTORAGE_OPEN_LISTEN		-1100
+
 class CSafeStorageListener: public ISafeStorageListener
 {
     protected:
 		int sfd;
-		
+		static int32_t setFdFlags ( int fd, int flags );
+		int32_t openTcpPort ( int32_t port );
     public:
-        CSafeStorageListener ( void );
+        CSafeStorageListener ( const string &params );
         virtual ~CSafeStorageListener ( void );
 		
 		virtual int32_t stop ( void );

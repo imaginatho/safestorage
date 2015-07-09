@@ -23,7 +23,7 @@ CSafeException::CSafeException ( const char *sourcefile, uint32_t line, int32_t 
 	char text[4096], *rest;
 	char *eline = text + sizeof(text);
 	
-	int bytes = snprintf(text, sizeof(text), "CSafeException[%s:%d]:%d", sourcefile, line, eCode);
+	int bytes = snprintf(text, sizeof(text), "CSafeException[%s:%d]:%d ", sourcefile, line, eCode);
 	if (bytes < 0) bytes = 0;
 	
 	rest = text + bytes;

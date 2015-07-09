@@ -2,6 +2,9 @@
 #define __SAFE_EXCEPTION__H__
 
 #include <stdint.h>
+#include <errno.h>
+#include <string.h>
+
 #include <string>
 #include <exception>
 
@@ -26,8 +29,9 @@ class CSafeException: exception
         string msg ( void ) const { return _message; };
 };
 
-#define CSAFE_EXCEPTION_CODE(X) CSafeException(__FILE__,__LINE__, X);
-#define CSAFE_EXCEPTION(X,...) 	CSafeException(__FILE__,__LINE__, X, __VA_ARGS__);
+#define CSAFE_EXCEPTION_CODE(X) 	CSafeException(__FILE__,__LINE__, X)
+#define CSAFE_EXCEPTION(X,...) 		CSafeException(__FILE__,__LINE__, X, __VA_ARGS__)
+#define CSAFE_EXCEPTION_SYS(X,...) 	CSafeException(__FILE__,__LINE__, X, "SYS(%d) %s", errno, strerror(errno))
 
 #endif
 
