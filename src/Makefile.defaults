@@ -4,7 +4,7 @@ BINDIR=$(abspath $(SRCDIR)/../bin)
 INCDIR=$(abspath $(SRCDIR)/../include)
 
 ifndef MODULES
-MODULES=$(TARGET).o
+MODULES := $(SOURCES:.cpp=.o)
 endif
 
 CXX=g++44
@@ -16,4 +16,4 @@ all: $(TARGET)
 	$(CXX) $(CXXFLAGS) -L$(LIBDIR) -c $*.cpp -o $@
 
 clean:
-	rm -f *.o $(TARGET)	
+	rm -f $(MODULES) $(TARGET) *.o
