@@ -10,23 +10,30 @@ using namespace std;
 
 #include <thread.h>
 #include <safe_storage.h>
+#include <safe_storage_connection.h>
 
 #define E_CSTORAGE_OPEN_LISTEN		-1100
+
+typedef map <int, CSafeStorageConnection *> CSafeStorageConnections;
 
 class CSafeStorageListener: public ISafeStorageListener, IThreadable
 {
     protected:
 		CThread thread;
-		int sfd, efd;
+		CSafeStorageConnections connections;
+		CSafeStorageConnection *lastConnection;	
+		int sfd, efd, lastFd;
 		struct epoll_event *events;
 				
 		static int32_t setFdFlags ( int fd, int flags );
 		int32_t openTcpPort ( int32_t port );
 		void initEpoll ( void );
-		void initListener ( void );
+		void initListener ( const string &params );
 		virtual int32_t run ( CThread *thread, void *_data );
 		void doListenEvent ( struct epoll_event &event );
 		void doDataEvent ( struct epoll_event &event );
+		CSafeStorageConnection *getConnection ( int fd );
+		CSafeStorageConnection *createConnection ( int fd, struct sockaddr &in_addr );
 		
     public:
         CSafeStorageListener ( const string &params );

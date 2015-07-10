@@ -25,9 +25,10 @@ using namespace std;
 CSafeStorageListener::CSafeStorageListener ( const string &params )
 	:thread(this)
 {
-	sfd = -1;
+	sfd = efd = lastFd = -1;
+	lastConnection = NULL;
 	events = NULL;
-	initListener();
+	initListener(params);
 	initEpoll();
 }
 
@@ -43,9 +44,10 @@ void CSafeStorageListener::initEpoll ( void )
 	events = (struct epoll_event *)calloc(D_CSTORAGE_MAX_LISTENER_CONNECTIONS, sizeof(events[0]));	
 }
 
-void CSafeStorageListener::initListener ( void )
+void CSafeStorageListener::initListener ( const string &params )
 {
-	
+	int port = atoi(params.c_str());
+	openTcpPort(port);
 }
 
 int32_t CSafeStorageListener::run ( CThread *thread, void *_data )
@@ -71,56 +73,14 @@ int32_t CSafeStorageListener::run ( CThread *thread, void *_data )
 
 			doDataEvent(events[index]);
 		}
-    }	
+    }
+	return 0;
 }
 
 void CSafeStorageListener::doDataEvent ( struct epoll_event &event )
 {
-/*	
-	// We have data on the fd waiting to be read. Read and display it. We must read whatever data is available
-	// completely, as we are running in edge-triggered mode and won't get a notification again for the same data.
-	int done = 0;
-
-	while (1)
-	{
-		ssize_t count;
-		char buf[512];
-
-		count = read (events[i].data.fd, buf, sizeof buf);
-		if (count == -1)
-		{
-			// If errno == EAGAIN, that means we have read all data. So go back to the main loop.
-			if (errno != EAGAIN)
-			{
-				perror ("read");
-				done = 1;
-			}
-			break;
-		}
-		else if (count == 0)
-		{
-			// End of file. The remote has closed the connection.
-			done = 1;
-			break;
-		}
-
-		// Write the buffer to standard output
-		s = write (1, buf, count);
-		if (s == -1)
-		{
-			perror ("write");
-			abort ();
-		}
-	}
-
-	if (done)
-	{
-		printf ("Closed connection on descriptor %d\n",
-		events[i].data.fd);
-
-		// Closing the descriptor will make epoll remove itfrom the set of descriptors which are monitored.
-		close (events[i].data.fd);
-	}*/
+	CSafeStorageConnection *conn = getConnection(event.data.fd);
+	conn->onData();
 }
 
 void CSafeStorageListener::doListenEvent ( struct epoll_event &event )
@@ -143,7 +103,9 @@ void CSafeStorageListener::doListenEvent ( struct epoll_event &event )
 
 		event.data.fd = fd;
 		event.events = EPOLLIN | EPOLLET;
-		if (epoll_ctl (efd, EPOLL_CTL_ADD, fd, &event) < 0) close(fd);		
+		if (epoll_ctl (efd, EPOLL_CTL_ADD, fd, &event) < 0) close(fd);
+		
+		createConnection(fd, in_addr);
 	}
 }
 
@@ -194,4 +156,32 @@ int32_t CSafeStorageListener::openTcpPort ( int32_t port )
 		return e.getResult();
 	}
 
+}
+
+
+CSafeStorageConnection *CSafeStorageListener::getConnection ( int fd )
+{
+	if (lastFd == fd) return lastConnection;
+	
+	CSafeStorageConnections::iterator it = connections.find(fd);
+	if (it == connections.end()) {
+		return NULL;
+	}
+	
+	return it->second;
+}
+
+CSafeStorageConnection *CSafeStorageListener::createConnection ( int fd, struct sockaddr &in_addr )
+{
+	CSafeStorageConnections::iterator it = connections.find(fd);
+	if (it != connections.end()) {
+		return it->second;
+	}
+	
+	CSafeStorageConnection *conn = new CSafeStorageConnection(fd, in_addr);
+	connections[fd] = conn;
+	lastFd = fd;
+	lastConnection = conn;
+	
+	return conn;
 }
