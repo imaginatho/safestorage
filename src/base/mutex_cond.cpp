@@ -23,32 +23,29 @@ uint32_t CMutexCond::sleep ( int32_t ms, const char *filename, int32_t line, uin
 
 	lstp.tv_sec = lstp.tv_usec = letp.tv_sec = letp.tv_usec = 0;
 	
-	// verifica si el tiempo de espera es cero, no debe esperar, en tal caso retorna
+	// check if wait time was zero because in this situation not need to wait
 	if ( ms == 0 ) return 0;
 
 	if (flags & CMUTEX_COND_F_GETUS) {
 		gettimeofday(&lstp, NULL);
 	}
 	
-	if ((flags & CMUTEX_COND_F_DONT_LOCK) == 0) {
-		// bloqueo del acceso a la cond
+	if ((flags & CMUTEX_COND_F_DONT_LOCK) == 0) {		
 		CEXP_ASSERT_RESULT(lock(filename ? filename : __FILE__, line ? line : __LINE__), "ERROR %d on CMutexCond::sleep(%d) lock", result, ms);
 	}
 	
 	if ( ms > 0 ) {
-		// en caso de especificar los tiempos realiza los calculos que finalmente se expresaran en nanosegundos
-		// dentro de la estructura tp (tiempo absoluto).
 		CEXP_ASSERT_RESULT(gettimeofday(&tp, NULL), "ERROR %d on CMutexCond::sleep(%d) gettimeofday", result, ms);
 		tp.tv_sec += (ms / 1000);
 		
-		// me quedo solo con los milisegundos, sin segundos
+		// take only milliseconds, without seconds
 		int32_t rms = ms % 1000;
 		
 		
 		tp.tv_usec += (rms * 1000);
 		
-		// en caso de superar los microsegundos que tiene un segundo tenemos que reajustar, pasando parte de estos
-		// microsegundos a segundos, para asi dejar los valores normalizados.
+		// in case that milliseconds are more than one second, must ajust to leave part of milliseconds less than one second, 
+		// adding this part on seconds.
 		if (tp.tv_usec >= 1000000) {
 			tp.tv_sec += (tp.tv_usec / 1000000);
 			tp.tv_usec = (tp.tv_usec % 1000000);
@@ -57,7 +54,7 @@ uint32_t CMutexCond::sleep ( int32_t ms, const char *filename, int32_t line, uin
 		ts.tv_nsec = tp.tv_usec * 1000;
 	}
 	
-	// segun esten especificado el tiempo o este sea negativo, se llama a la espera con o sin timeout.
+	// if time was negative, not define a timeout.
 	sleeping = true;
 	int32_t result;
 	if ( ms > 0 ) {
@@ -72,7 +69,6 @@ uint32_t CMutexCond::sleep ( int32_t ms, const char *filename, int32_t line, uin
 	sleeping = false;
 	
 	if ((flags & CMUTEX_COND_F_DONT_UNLOCK) == 0) {
-		// debloqueo del mutex
 		CEXP_ASSERT_RESULT(unlock(),  "ERROR %d on CMutexCond::sleep(%d) unlock", result, ms); 
 	}
 	
