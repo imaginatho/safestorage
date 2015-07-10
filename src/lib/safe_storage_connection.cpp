@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -36,15 +37,87 @@ void CSafeStorageConnection::realloc ( uint32_t size )
 {
 	if (dsize >= size) return;
 	dsize = ((size / BLOCK_SIZE) + (size % BLOCK_SIZE ? 1: 0)) * BLOCK_SIZE;
-	
+
 	uint32_t doffset = dcur ? dcur - dbegin : 0;
 	dbegin = (uint8_t *)::realloc(dbegin, dsize);
 	dend = dbegin + dsize;
 	if (dcur) dcur = dbegin + doffset;
 }
 
-void CSafeStorageConnection::onData ( void )
+int32_t CSafeStorageConnection::onData ( void )
 {
+	int bytes, dread, dmax;
+
+	while (1) {
+		dread = dcur - dbegin;
+
+		if (dread < sizeof(CSAFE_NET_HEADER)) dmax = sizeof(CSAFE_NET_HEADER) - dread;
+		else dmax = ((CSAFE_NET_HEADER *)dbegin)->len - dread;
+
+		if ((dcur + dmax) > dend) realloc(dread + dmax);
+
+		if (dmax == 0) {
+			onRequest((CSAFE_NET_HEADER *)dbegin, dbegin + sizeof(CSAFE_NET_HEADER), dcur - dbegin - sizeof(CSAFE_NET_HEADER));
+			dcur = dbegin;
+			continue;
+		}
+
+		bytes = read (fd, dcur, dmax);
+		if (bytes > 0) {
+			dcur += bytes;
+			continue;
+		}
+
+		if (bytes < 0 && errno == EAGAIN) return 0;
+		break;
+	}
+	return -1;
+}
+
+int32_t CSafeStorageConnection::onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data, uint32_t dlen )
+{
+	switch (hdr->cmd_res) {
+		case SAFE_CMD_OPEN:
+			break;
+			
+		case SAFE_CMD_CLOSE:
+			break;
+			
+		case SAFE_CMD_READ:
+			break;
+			
+		case SAFE_CMD_WRITE:
+			break;
+			
+		case SAFE_CMD_VERIFY:
+			break;
+			
+		case SAFE_CMD_READ_LOG:
+			break;
+			
+		case SAFE_CMD_APPLY_LOG:
+			break;
+			
+		case SAFE_CMD_READ_LOG_REG:
+			break;
+			
+		case SAFE_CMD_COMMIT:
+			break;
+			
+		case SAFE_CMD_ROLLBACK:
+			break;
+			
+		case SAFE_CMD_GET_PARAM:
+			break;
+			
+		case SAFE_CMD_SET_PARAM:
+			break;
+			
+		case SAFE_CMD_GET_INFO:
+			break;
+			
+	}
+	return 0;
 }
 
 #undef BLOCK_SIZE

@@ -10,7 +10,7 @@ using namespace std;
 
 #include <thread.h>
 #include <safe_storage.h>
-
+#include <safe_net.h>
 
 class CSafeStorageConnection
 {
@@ -26,7 +26,8 @@ class CSafeStorageConnection
         CSafeStorageConnection ( int fd, struct sockaddr &in_addr );
         virtual ~CSafeStorageConnection ( void );
 		
-		virtual void onData ( void );
+		int32_t onData ( void );
+		int32_t onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data, uint32_t dlen );
 };
 
 #endif
