@@ -23,14 +23,15 @@ using namespace std;
 #endif
 
 CSafeStorageListener::CSafeStorageListener ( const string &params )
+	:thread(this)
 {
 	sfd = -1;
-/*	events = NULL;
+	events = NULL;
 	initListener();
-	initEpoll();	*/
+	initEpoll();
 }
-/*
-CSafeStorageListener::initEpoll ( void )
+
+void CSafeStorageListener::initEpoll ( void )
 {
 	struct epoll_event event;
 	
@@ -42,81 +43,49 @@ CSafeStorageListener::initEpoll ( void )
 	events = (struct epoll_event *)calloc(D_CSTORAGE_MAX_LISTENER_CONNECTIONS, sizeof(events[0]));	
 }
 
-void CSafeStorageListener::run ( void )
+void CSafeStorageListener::initListener ( void )
 {
-	int done = 0;
-	ssize_t count;
-	char buf[512];
+	
+}
+
+int32_t CSafeStorageListener::run ( CThread *thread, void *_data )
+{
+	int count, index;
 
 	while (1)
-    {
-		int n, i;
-
-		n = epoll_wait (efd, events, MAXEVENTS, -1);
-		for (i = 0; i < n; i++)
+    {		
+		count = epoll_wait (efd, events, D_CSTORAGE_MAX_LISTENER_CONNECTIONS, -1);
+		for (index = 0; index < count; index++)
 		{
-			if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
+			if ((events[index].events & (EPOLLERR|EPOLLHUP)) || !(events[index].events & EPOLLIN))
 			{
 				// An error has occured on this fd, or the socket is not ready for reading (why were we notified then?)
-				fprintf (stderr, "epoll error\n");
-				close (events[i].data.fd);
+				close (events[index].data.fd);
 				continue;
 			}
-			if (sfd == events[i].data.fd) {
-				doListenEvent(events[i]);
+	
+			if (sfd == events[index].data.fd) {
+				doListenEvent(events[index]);
 				continue;
 			}
 
-			doDataEvent(events[i]);
-
-			// We have data on the fd waiting to be read. Read and display it. We must read whatever data is available
-            // completely, as we are running in edge-triggered mode and won't get a notification again for the same data.
-              int done = 0;
-
-              while (1)
-                {
-                  ssize_t count;
-                  char buf[512];
-
-                  count = read (events[i].data.fd, buf, sizeof buf);
-                  if (count == -1)
-                    {
-                      // If errno == EAGAIN, that means we have read all data. So go back to the main loop.
-                      if (errno != EAGAIN)
-                        {
-                          perror ("read");
-                          done = 1;
-                        }
-                      break;
-                    }
-                  else if (count == 0)
-                    {
-                      // End of file. The remote has closed the connection.
-                      done = 1;
-                      break;
-                    }
-
-                  // Write the buffer to standard output
-                  s = write (1, buf, count);
-                  if (s == -1)
-                    {
-                      perror ("write");
-                      abort ();
-                    }
-                }
-
-              if (done)
-                {
-                  printf ("Closed connection on descriptor %d\n",
-                          events[i].data.fd);
-
-                  // Closing the descriptor will make epoll remove itfrom the set of descriptors which are monitored.
-                  close (events[i].data.fd);
-                }
-            }
-        }
+			doDataEvent(events[index]);
+		}
     }	
-	while (1) {
+}
+
+void CSafeStorageListener::doDataEvent ( struct epoll_event &event )
+{
+/*	
+	// We have data on the fd waiting to be read. Read and display it. We must read whatever data is available
+	// completely, as we are running in edge-triggered mode and won't get a notification again for the same data.
+	int done = 0;
+
+	while (1)
+	{
+		ssize_t count;
+		char buf[512];
+
 		count = read (events[i].data.fd, buf, sizeof buf);
 		if (count == -1)
 		{
@@ -149,12 +118,12 @@ void CSafeStorageListener::run ( void )
 		printf ("Closed connection on descriptor %d\n",
 		events[i].data.fd);
 
-		// Closing the descriptor will make epoll remove it from the set of descriptors which are monitored.
+		// Closing the descriptor will make epoll remove itfrom the set of descriptors which are monitored.
 		close (events[i].data.fd);
-	}
+	}*/
 }
 
-CSafeStorageListener::doListenEvent ( struct &vevent )
+void CSafeStorageListener::doListenEvent ( struct epoll_event &event )
 {
 	// We have a notification on the listening socket, which means one or more incoming connections.
 	struct sockaddr in_addr;
@@ -177,7 +146,7 @@ CSafeStorageListener::doListenEvent ( struct &vevent )
 		if (epoll_ctl (efd, EPOLL_CTL_ADD, fd, &event) < 0) close(fd);		
 	}
 }
-*/
+
 
 CSafeStorageListener::~CSafeStorageListener ( void )
 {
@@ -187,7 +156,7 @@ int32_t CSafeStorageListener::stop ( void )
 {
 	return E_CSTORAGE_OK;
 }
-/*
+
 int32_t CSafeStorageListener::setFdFlags ( int fd, int flags )
 {
 	int _flags = fcntl(fd, F_GETFL, 0);
@@ -201,8 +170,8 @@ int32_t CSafeStorageListener::setFdFlags ( int fd, int flags )
 int32_t CSafeStorageListener::openTcpPort ( int32_t port )
 {
 	try {
-		if ((sfd = socket(AF_INET, SOCK_STREAM, 0) < 0)) 	throw CSAFE_EXCEPTION_SYS(E_CSTORAGE_OPEN_LISTEN);
-		if (setFdFlags(sfd, O_NONBLOCK)) 					throw CSAFE_EXCEPTION_SYS(E_CSTORAGE_OPEN_LISTEN);
+		if ((sfd = socket(AF_INET, SOCK_STREAM, 0) < 0)) 	CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
+		if (setFdFlags(sfd, O_NONBLOCK)) 					CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
 
 		struct sockaddr_in s_addr;
 		memset(&s_addr, 0, sizeof(s_addr));
@@ -212,17 +181,17 @@ int32_t CSafeStorageListener::openTcpPort ( int32_t port )
 		s_addr.sin_port = htons(port);
 
 		if (bind(sfd, (struct sockaddr *) &s_addr, sizeof(s_addr)) < 0) {
-			throw CSAFE_EXCEPTION_SYS(E_CSTORAGE_OPEN_LISTEN);
+			CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
 		}
 
 		listen(sfd, SOMAXCONN);
 		
 		return E_CSTORAGE_OK;
 	}
-	catch (CSafeException &e) {
+	catch (CException &e) {
 		if (sfd >= 0) close(sfd);
 		sfd = -1;
-		return e.code();
+		return e.getResult();
 	}
 
-}*/
+}

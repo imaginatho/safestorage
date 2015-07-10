@@ -99,7 +99,7 @@ int CIniFile::loadFile ( const string &filename )
 
 void CIniFile::parse ( void )
 {
-	char *cgroup = "";
+	const char *cgroup = "";
 	char *eol, *key, *cvalue, *line, *pos, *current;
 	int cline = 0;
 	
@@ -285,8 +285,8 @@ int main ( int argc, char *argv[] )
 		printf("\n");
 	}
 	
-	char *patterns[] = { "/opt/loto*/client.txt", "/opt/loto*/client.*", "/opt/loto*/client*kk*", "/opt/loto?/client.*", "/opt/loto*/client.?", NULL };
-	char *tests[] = { "/opt/lotoserver/client.txt", "/opt/lotoclient/etc/client.txt.org", "/opt/loto/client.txt",  "/opt/loto1/client.txt",
+	const char *patterns[] = { "/opt/loto*/client.txt", "/opt/loto*/client.*", "/opt/loto*/client*kk*", "/opt/loto?/client.*", "/opt/loto*/client.?", NULL };
+	const char *tests[] = { "/opt/lotoserver/client.txt", "/opt/lotoclient/etc/client.txt.org", "/opt/loto/client.txt",  "/opt/loto1/client.txt",
 					  "/opt/loto/clientkkclient", "/opt/loto/clientkkclientkkdddd", "/opt/loto/client.0", NULL };
 	int ipat = 0;
 	while (patterns[ipat]) {
