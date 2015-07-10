@@ -7,7 +7,7 @@
 
 #include <log.h>
 #include <safe_client.h>
-#include <safe_cmds.h>
+#include <safe_net.h>
 
 #define DECLARE_NET_REQ_RESP(CMD,REQV,RESPV) \
 	CSAFE_NET_REQ_##CMD REQV;\

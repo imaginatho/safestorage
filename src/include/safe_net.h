@@ -19,6 +19,14 @@
 
 inline const char *safeCmd2String ( uint32_t cmd );
 
+#define SAFE_CMD_NET_HEADER		0x23C4B955
+typedef struct
+{
+    uint32_t signature;
+    uint32_t len;
+	int32_t  cmd_res;
+} __attribute__ ((packed)) CSAFE_NET_HEADER;
+
 // OPEN
 
 typedef struct
