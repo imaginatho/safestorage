@@ -19,8 +19,9 @@ class CSafeStorageConnection
 		uint8_t *dbegin;
 		uint32_t dsize;
 		uint8_t *dend;
-		uint8_t *data;
-				
+		uint8_t *dcur;
+			
+		void realloc ( uint32_t size );
     public:
         CSafeStorageConnection ( int fd, struct sockaddr &in_addr );
         virtual ~CSafeStorageConnection ( void );
