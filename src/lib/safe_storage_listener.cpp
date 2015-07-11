@@ -132,7 +132,7 @@ int32_t CSafeStorageListener::setFdFlags ( int fd, int flags )
 int32_t CSafeStorageListener::openTcpPort ( int32_t port )
 {
 	try {
-		if ((sfd = socket(AF_INET, SOCK_STREAM, 0) < 0)) 	CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
+		if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) 	CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
 		if (setFdFlags(sfd, O_NONBLOCK)) 					CEXP_SYS(E_CSTORAGE_OPEN_LISTEN);
 
 		struct sockaddr_in s_addr;

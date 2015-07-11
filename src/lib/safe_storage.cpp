@@ -15,6 +15,7 @@ using namespace std;
 
 #include <log.h>
 #include <safe_storage_imp.h>
+#include <safe_storage_listener.h>
 
 static const char *__safe_storage_extensions [] = {"", ".idx", ".rlg", ".st"};
                            
@@ -1090,6 +1091,7 @@ int32_t CSafeStorage::setParam ( const string &name, int32_t value )
 int32_t CSafeStorage::createListener ( const string &params, ISafeStorageListener **ltn )
 {
 //    syslog(LOG_ERR | LOG_USER, "createListener(%s)", params.c_str());
+	CSafeStorageListener *listener = new CSafeStorageListener(params);
 	return E_CSTORAGE_OK;
 }
 
