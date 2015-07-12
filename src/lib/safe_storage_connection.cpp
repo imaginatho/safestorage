@@ -37,6 +37,7 @@ void CSafeStorageConnection::realloc ( uint32_t size )
 {
 	if (dsize >= size) return;
 	dsize = ((size / BLOCK_SIZE) + (size % BLOCK_SIZE ? 1: 0)) * BLOCK_SIZE;
+	printf("*** realloc(%d => %d)\n", size, dsize);
 
 	uint32_t doffset = dcur ? dcur - dbegin : 0;
 	dbegin = (uint8_t *)::realloc(dbegin, dsize);
@@ -50,10 +51,11 @@ int32_t CSafeStorageConnection::onData ( void )
 
 	while (1) {
 		dread = dcur - dbegin;
-
+		
 		if (dread < sizeof(CSAFE_NET_HEADER)) dmax = sizeof(CSAFE_NET_HEADER) - dread;
 		else dmax = ((CSAFE_NET_HEADER *)dbegin)->len - dread;
 
+		printf("dread:%-8d dmax:%-8d sizeof:%-8d\n", dread, dmax, sizeof(CSAFE_NET_HEADER));
 		if ((dcur + dmax) > dend) realloc(dread + dmax);
 
 		if (dmax == 0) {
@@ -63,6 +65,7 @@ int32_t CSafeStorageConnection::onData ( void )
 		}
 
 		bytes = read (fd, dcur, dmax);
+		printf("bytes:%-8d dmax:%-8d\n", bytes, dmax);
 		if (bytes > 0) {
 			dcur += bytes;
 			continue;
@@ -76,6 +79,12 @@ int32_t CSafeStorageConnection::onData ( void )
 
 int32_t CSafeStorageConnection::onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data, uint32_t dlen )
 {
+	printf("hdr.signature:    %08X\n", hdr->signature);
+	printf("hdr.len:          %d\n", hdr->len);
+	printf("hdr.cmd_res:      %d\n", hdr->cmd_res);
+	printf("dlen:             %d\n", dlen);
+	if (dlen > 0) printf("=== BEGIN MSG ===\n%s\n=== END MSG ===\n\n", data);
+	
 	switch (hdr->cmd_res) {
 		case SAFE_CMD_OPEN:
 			break;

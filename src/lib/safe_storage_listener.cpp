@@ -30,6 +30,7 @@ CSafeStorageListener::CSafeStorageListener ( const string &params )
 	events = NULL;
 	initListener(params);
 	initEpoll();
+	thread.start();
 }
 
 void CSafeStorageListener::initEpoll ( void )
@@ -79,6 +80,7 @@ int32_t CSafeStorageListener::run ( CThread *thread, void *_data )
 
 void CSafeStorageListener::doDataEvent ( struct epoll_event &event )
 {
+	printf("doDataEvent\n");
 	CSafeStorageConnection *conn = getConnection(event.data.fd);
 	conn->onData();
 }

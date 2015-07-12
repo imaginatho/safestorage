@@ -12,9 +12,10 @@ using namespace std;
 class CSafeClient: public ISafeStorage
 {
     protected:
-		int32_t sendRequest ( const void *req, uint32_t reqlen, const void *req_vdata, uint32_t req_vdatalen, void *resp, uint32_t resplen, 
-						      const void *resp_vdata = NULL, int32_t *resp_vdatalen = NULL );
-	
+		uint8_t *dbegin, *dend, *data, *respdata;
+		uint32_t dsize;
+		int32_t sendRequest ( uint32_t cmd, uint32_t flags = 0, const void *reqReq = NULL, uint32_t reqRegSize = 0, const void *reqVdata = NULL, 
+							  uint32_t reqVdataLen = 0, uint32_t respRegSize = 0, void *respVdata = NULL, uint32_t respVdataSize = 0 );	
     public:
         CSafeClient ( void );
         virtual ~CSafeClient ( void );
@@ -29,8 +30,6 @@ class CSafeClient: public ISafeStorage
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 );
         virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 );
         virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 );
-		virtual int32_t goTop ( uint32_t flags = 0 );
-		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 );
 		virtual int32_t getParam ( const string &name );
 		virtual int32_t setParam ( const string &name, int32_t value );
 		virtual int32_t createListener ( const string &params, ISafeStorageListener **ltn = NULL ) 	CSTORAGE_METHOD_NOT_IMPL;

@@ -7,7 +7,7 @@
 
 #include <log.h>
 #include <safe_client.h>
-#include <safe_net.h>
+#include <safe_storage_net.h>
 
 #define DECLARE_NET_REQ_RESP(CMD,REQV,RESPV) \
 	CSAFE_NET_REQ_##CMD REQV;\
@@ -21,6 +21,10 @@
 	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, RESPV.result);\
 	return (RESPV.result);
 	
+#define PREPARE_PREQ(T,P) \
+	T *P = (T *)(dbegin + sizeof(CSAFE_NET_HEADER)); \
+	memset(P, 0, sizeof(P[0]));
+	
 CSafeClient::CSafeClient ( void )
 {
 }
@@ -31,199 +35,111 @@ CSafeClient::~CSafeClient ( void )
 
 int32_t CSafeClient::close ( uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(CLOSE, req, resp)
-	C_LOG_TRACE("%s(%08X)", __FUNCTION__, flags);
-
-	req.flags = flags;
-	
-	SEND_AND_RET_NET_REQ_RESP(req, resp)
+	return sendRequest(SAFE_CMD_CLOSE, flags);
 }
 
 int32_t CSafeClient::open ( const string &location, uint32_t flags, uint32_t hash_key )
 {
-	DECLARE_NET_REQ_RESP(OPEN, req, resp)
-	C_LOG_TRACE("%s(%s, %08X)", __FUNCTION__, location.c_str(), flags);
+	PREPARE_PREQ(CSAFE_NET_REQ_OPEN, req);
 
-	req.flags = flags;
-	req.hash_key = hash_key;
-	req.location_len = location.size()+1;
-	
-	sendRequest(&req, sizeof(req), location.c_str(), req.location_len, &resp, sizeof(resp));
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	req->hash_key = hash_key;
+	return sendRequest(SAFE_CMD_OPEN, flags, req, sizeof(*req), location.c_str(), location.size()+1);
 }
 
 int32_t CSafeClient::commit ( void )
 {
-	DECLARE_NET_REQ_RESP(COMMIT, req, resp)
-	C_LOG_TRACE("%s()", __FUNCTION__);
-
-	SEND_AND_RET_NET_REQ_RESP(req, resp)
+	return sendRequest(SAFE_CMD_COMMIT);
 }
 
 int32_t CSafeClient::getInfo ( CSafeStorageInfo &info )
 {
-	DECLARE_NET_REQ_RESP(GET_INFO, req, resp)
-	C_LOG_TRACE("%s()", __FUNCTION__);
+	int32_t res = sendRequest(SAFE_CMD_GET_INFO);
 
-	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp));
-	if (resp.result == 0) {
-		info = resp.info;
+	CSAFE_NET_RESP_GET_INFO *resp = (CSAFE_NET_RESP_GET_INFO *)respdata;
+	if (res == E_CSTORAGE_OK) {
+		info = resp->info;
 	}
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return res;
 }
 
 int32_t CSafeClient::rollback ( void )
 {
-	DECLARE_NET_REQ_RESP(ROLLBACK, req, resp)
-	C_LOG_TRACE("%s()", __FUNCTION__);
-
-	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp));
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return sendRequest(SAFE_CMD_ROLLBACK);
 }
 
 int32_t CSafeClient::verify ( uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(VERIFY, req, resp)
-	C_LOG_TRACE("%s(%08X)", __FUNCTION__, flags);
-
-	req.flags = flags;
-	
-	SEND_AND_RET_NET_REQ_RESP(req, resp)
+	return sendRequest(SAFE_CMD_VERIFY, flags);
 }
 
 
 int32_t CSafeClient::write ( tserial_t serial, const void *data, uint32_t dlen, uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(WRITE, req, resp)
-	C_LOG_TRACE("%s(%u,..,%u,%08X)", __FUNCTION__, serial, dlen, flags);
-
-	req.serial = serial;
-	req.dlen = dlen;
-	req.flags = flags;
+	PREPARE_PREQ(CSAFE_NET_REQ_WRITE, req);
 	
-	sendRequest(&req, sizeof(req), data, req.dlen, &resp, sizeof(resp));
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	req->serial = serial;
+	return sendRequest(SAFE_CMD_WRITE, flags, req, sizeof(*req), data, dlen);
 }
 
 int32_t CSafeClient::read ( tserial_t &serial, void *data, uint32_t dlen, uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(READ, req, resp)
-	C_LOG_TRACE("%s(%u,..,%u,%08X)", __FUNCTION__, serial, dlen, flags);
+	PREPARE_PREQ(CSAFE_NET_REQ_READ, req);
 
-	req.serial = serial;
-	req.dlen = dlen;
-	req.flags = flags;
-	
-	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp), data, &resp.result);
-	if (resp.result == 0) {
-		serial = resp.serial;
+	req->serial = serial;
+	int32_t res = sendRequest(SAFE_CMD_READ, flags, req, sizeof(*req), NULL, 0, sizeof(CSAFE_NET_RESP_READ), data, dlen);
+	CSAFE_NET_RESP_READ *resp = (CSAFE_NET_RESP_READ *)respdata;
+	if (res >= 0) {
+		serial = resp->serial;
 	}
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return res;
 }
 
 int32_t CSafeClient::readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(READ_LOG, req, resp)
-	C_LOG_TRACE("%s(%u,..,%u,%08X)", __FUNCTION__, seq, dlen, flags);
+	PREPARE_PREQ(CSAFE_NET_REQ_READ_LOG, req);
 
-	req.seq = seq;
-	req.dlen = dlen;
-	req.flags = flags;
-
-	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp), data, &resp.result);
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	req->seq = seq;
+	return sendRequest(SAFE_CMD_READ_LOG, flags, req, sizeof(*req), NULL, 0, 0, data, dlen);
 }
 
 
 int32_t CSafeClient::applyLog ( const void *data, uint32_t dlen, uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(APPLY_LOG, req, resp)
-	C_LOG_TRACE("%s(..,%u,%08X)", __FUNCTION__,  dlen, flags);
-
-	req.dlen = dlen;
-	req.flags = flags;
-
-	sendRequest(&req, sizeof(req), data, dlen, &resp, sizeof(resp));
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return sendRequest(SAFE_CMD_APPLY_LOG, flags, NULL, 0, data, dlen);
 }
 
 int32_t CSafeClient::readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags )
 {
-	DECLARE_NET_REQ_RESP(READ_LOG_REG, req, resp)
-	C_LOG_TRACE("%s(%d,..,%08X)", __FUNCTION__, serial, flags);
-
-	req.seq = seq;
-	req.flags = flags;
-
-	sendRequest(&req, sizeof(req), NULL, 0, &resp, sizeof(resp));
-	if (resp.result == 0) {
-		serial = resp.serial;
-		type = resp.type;
+	PREPARE_PREQ(CSAFE_NET_REQ_READ_LOG_REG, req);
+	req->seq = seq;
+	int32_t res = sendRequest(SAFE_CMD_READ_LOG_REG, flags, req, sizeof(*req));
+	CSAFE_NET_RESP_READ_LOG_REG *resp = (CSAFE_NET_RESP_READ_LOG_REG *)respdata;
+	if (res == E_CSTORAGE_OK) {
+		serial = resp->serial;
+		type = resp->type;		
 	}
-	
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return res;
 }
-
-
-int32_t CSafeClient::goTop ( uint32_t flags ) 
-{
-	DECLARE_NET_REQ_RESP(GO_TOP, req, resp)
-	C_LOG_TRACE("%s(%08X)", __FUNCTION__, flags);
-
-	req.flags = flags;
-	SEND_AND_RET_NET_REQ_RESP(req, resp)
-}
-
-
-int32_t CSafeClient::goPos ( tserial_t serial, uint32_t flags ) 
-{
-	DECLARE_NET_REQ_RESP(GO_POS, req, resp)
-	C_LOG_TRACE("%s(%d,%08X)", __FUNCTION__, serial, flags);
-
-	req.flags = flags;
-	req.serial = serial;
-	SEND_AND_RET_NET_REQ_RESP(req, resp)
-}
-
 
 int32_t CSafeClient::getParam ( const string &name )
 {
-	DECLARE_NET_REQ_RESP(GET_PARAM, req, resp)
-	C_LOG_TRACE("%s(%s)", __FUNCTION__, name.c_str());
-
-	req.name_len = name.size()+1;
-	sendRequest(&req, sizeof(req), name.c_str(), req.name_len, &resp, sizeof(resp));
-	
-	if (resp.result == 0) {
-		return resp.value;
+	int32_t res = sendRequest(SAFE_CMD_GET_PARAM, 0, NULL, 0, name.c_str(), name.size()+1);
+	CSAFE_NET_RESP_GET_PARAM *resp = (CSAFE_NET_RESP_GET_PARAM *)respdata;
+	if (res == E_CSTORAGE_OK) {
+		res = resp->value;
 	}
-	
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	return res;
 }
 
 int32_t CSafeClient::setParam ( const string &name, int32_t value )
 {
-	DECLARE_NET_REQ_RESP(SET_PARAM, req, resp)
-	C_LOG_TRACE("%s(%s,%d)", __FUNCTION__, name.c_str(), value);
-
-	req.name_len = name.size()+1;
-	req.value = value;
-	sendRequest(&req, sizeof(req), name.c_str(), req.name_len, &resp, sizeof(resp));
-	C_LOG_DEBUG("%s.result:%d", __FUNCTION__, resp.result);
-	return resp.result;
+	PREPARE_PREQ(CSAFE_NET_REQ_SET_PARAM, req);
+	req->value = value;
+	return sendRequest(SAFE_CMD_SET_PARAM, 0, req, sizeof(*req), name.c_str(), name.size()+1);
 }
 
-int32_t CSafeClient::sendRequest ( const void *req, uint32_t reqlen, const void *req_vdata, uint32_t req_vdatalen, void *resp, uint32_t resplen, 
-								   const void *resp_vdata, int32_t *resp_vdatalen )
+int32_t CSafeClient::sendRequest ( uint32_t cmd, uint32_t flags, const void *reqReq, uint32_t reqRegSize, const void *reqVdata, 
+								   uint32_t reqVdataLen, uint32_t respRegSize, void *respVdata, uint32_t respVdataSize )
 {
 /*
 	C_LOG_DEBUG("sendRequest msg_in.size:%d", msg_in.GetSize());
