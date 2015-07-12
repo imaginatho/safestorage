@@ -27,15 +27,13 @@ using namespace std;
 #define O_CSTORAGE_BRIDGE_READ                0x00000040
 #define O_CSTORAGE_BRIDGE_READ_LOG_REG        0x00000080
 #define O_CSTORAGE_BRIDGE_READ_LOG            0x00000100
-#define O_CSTORAGE_BRIDGE_GO_TOP              0x00000200
-#define O_CSTORAGE_BRIDGE_GO_POS              0x00000400
-#define O_CSTORAGE_BRIDGE_GET_PARAM           0x00000800
-#define O_CSTORAGE_BRIDGE_SET_PARAM           0x00001000
-#define O_CSTORAGE_BRIDGE_APPLY_LOG           0x00002000
-#define O_CSTORAGE_BRIDGE_GET_INFO            0x00004000
-#define O_CSTORAGE_BRIDGE_CREATE_LISTENER     0x00008000
-#define O_CSTORAGE_BRIDGE_CREATE_REPLICA      0x00010000
-#define O_CSTORAGE_BRIDGE_SET_CALLBACK        0x00020000
+#define O_CSTORAGE_BRIDGE_GET_PARAM           0x00000200
+#define O_CSTORAGE_BRIDGE_SET_PARAM           0x00000400
+#define O_CSTORAGE_BRIDGE_APPLY_LOG           0x00000800
+#define O_CSTORAGE_BRIDGE_GET_INFO            0x00001000
+#define O_CSTORAGE_BRIDGE_CREATE_LISTENER     0x00002000
+#define O_CSTORAGE_BRIDGE_CREATE_REPLICA      0x00004000
+#define O_CSTORAGE_BRIDGE_SET_CALLBACK        0x00008000
                                               
 class CSafeStorageBridge: public ISafeStorage
 {
@@ -59,8 +57,6 @@ class CSafeStorageBridge: public ISafeStorage
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 ) {__BRIDGE_RET_STG_CALL(READ_LOG_REG, readLogReg(seq, serial, type, __BM_FLAGS));};
         virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 )			{__BRIDGE_RET_STG_CALL(READ_LOG, readLog(seq, data,dlen, __BM_FLAGS));};
         virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 )				{__BRIDGE_RET_STG_CALL(APPLY_LOG, applyLog( data,dlen, __BM_FLAGS));};
-		virtual int32_t goTop ( uint32_t flags = 0 )													{__BRIDGE_RET_STG_CALL(GO_TOP, goTop(__BM_FLAGS));};
-		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 )									{__BRIDGE_RET_STG_CALL(GO_POS, goPos(serial, __BM_FLAGS));};
 		virtual int32_t getParam ( const string &name )													{__BRIDGE_RET_STG_CALL(GET_PARAM, getParam(name));};
 		virtual int32_t setParam ( const string &name, int32_t value )									{__BRIDGE_RET_STG_CALL(SET_PARAM, setParam(name, value));};
 		virtual int32_t createListener ( const string &params, ISafeStorageListener **ltn )				{__BRIDGE_RET_STG_CALL(CREATE_LISTENER, createListener(params, ltn));};

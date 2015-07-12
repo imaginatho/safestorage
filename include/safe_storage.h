@@ -122,8 +122,6 @@ class ISafeStorage
         virtual int32_t readLogReg ( tseq_t seq, tserial_t &serial, uint8_t &type, uint32_t flags = 0 ) = 0;
         virtual int32_t readLog ( tseq_t seq, void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
         virtual int32_t applyLog ( const void *data, uint32_t dlen, uint32_t flags = 0 ) = 0;
-		virtual int32_t goTop ( uint32_t flags = 0 ) = 0;
-		virtual int32_t goPos ( tserial_t serial, uint32_t flags = 0 ) = 0;
 		virtual int32_t getParam ( const std::string &name ) = 0;
 		virtual int32_t setParam ( const std::string &name, int32_t value ) = 0;
 		virtual int32_t createListener ( const std::string &params, ISafeStorageListener **ltn = NULL )	= 0;

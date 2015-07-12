@@ -10,7 +10,7 @@ using namespace std;
 
 #include <thread.h>
 #include <safe_storage.h>
-#include <safe_net.h>
+#include <safe_storage_net.h>
 
 class CSafeStorageConnection
 {

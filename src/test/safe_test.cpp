@@ -318,7 +318,6 @@ int32_t main ( int32_t argc, char *argv[] )
 		int64_t tot_bytes = 0;
 
 		tserial_t index = 0;
-		ssi->goTop();
 		while (true) {
 			if (nloops <= 0) break;
 			--nloops;
@@ -362,7 +361,6 @@ int32_t main ( int32_t argc, char *argv[] )
 		int32_t bytes, count = 0;
 		int64_t tot_bytes = 0;
 		tseq_t index = 1;
-		ssi->goTop();
 		while (true) {
 			if (nloops <= 0) break;
 			--nloops;
