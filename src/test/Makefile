@@ -1,8 +1,9 @@
-TARGET=$(BINDIR)/safe_test
+all: safe_test
 
-MODULES=safe_test.o
+safe_test:
+	@echo -e "\x1B[34m############## compiling safe_test ##############\x1B[0m"
+	@(cd safe && make)
 
-include ../Makefile.defaults
-
-$(TARGET): $(MODULES)
-	$(CXX) $(CXXFLAGS) $(MODULES) -o $@ -L$(LIBDIR) -lsafestorage
+clean:
+	@echo -e "\x1B[34m############## cleaning safe_test ##############\x1B[0m"
+	@(cd safe && make clean)

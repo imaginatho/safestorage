@@ -85,48 +85,19 @@ int32_t CSafeStorageConnection::onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data
 	printf("dlen:             %d\n", dlen);
 	if (dlen > 0) printf("=== BEGIN MSG ===\n%s\n=== END MSG ===\n\n", data);
 	
+	int res = E_CSTORAGE_OPERATION_NOT_IMPLEMENTED;
+	
 	switch (hdr->cmd_res) {
-		case SAFE_CMD_OPEN:
-			break;
-			
-		case SAFE_CMD_CLOSE:
-			break;
-			
-		case SAFE_CMD_READ:
-			break;
-			
-		case SAFE_CMD_WRITE:
-			break;
-			
-		case SAFE_CMD_VERIFY:
-			break;
-			
 		case SAFE_CMD_READ_LOG:
-			break;
-			
-		case SAFE_CMD_APPLY_LOG:
-			break;
-			
-		case SAFE_CMD_READ_LOG_REG:
-			break;
-			
-		case SAFE_CMD_COMMIT:
-			break;
-			
-		case SAFE_CMD_ROLLBACK:
 			break;
 			
 		case SAFE_CMD_GET_PARAM:
 			break;
 			
-		case SAFE_CMD_SET_PARAM:
-			break;
-			
 		case SAFE_CMD_GET_INFO:
 			break;
-			
 	}
-	return 0;
+	return res;
 }
 
 #undef BLOCK_SIZE
