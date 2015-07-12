@@ -1,4 +1,4 @@
-all: libsafestorage safe_test read_example write_example ini_example listener_example
+all: libsafestorage safe_test read_example write_example ini_example listener_example replica_example
 
 libsafestorage:
 	@echo -e "\x1B[34m############## compiling libsafestorage ##############\x1B[0m"
@@ -20,6 +20,10 @@ listener_example:
 	@echo -e "\x1B[34m############## compiling listener_example ##############\x1B[0m"
 	@(cd src/examples/listener && make)
 
+replica_example:
+	@echo -e "\x1B[34m############## compiling replica_example ##############\x1B[0m"
+	@(cd src/examples/replica && make)
+
 ini_example:
 	@echo -e "\x1B[34m############## compiling ini_example ##############\x1B[0m"
 	@(cd src/examples/ini && make)
@@ -35,5 +39,7 @@ clean:
 	@(cd src/examples/write && make clean)
 	@echo -e "\x1B[34m############## cleaning listener_example ##############\x1B[0m"
 	@(cd src/examples/listener && make clean)
+	@echo -e "\x1B[34m############## cleaning replica_example ##############\x1B[0m"
+	@(cd src/examples/replica && make clean)
 	@echo -e "\x1B[34m############## cleaning ini_example ##############\x1B[0m"
 	@(cd src/examples/ini && make clean)

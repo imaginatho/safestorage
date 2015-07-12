@@ -35,6 +35,6 @@ int main ( int argc, char *argv[] )
 	}
 	sfs->commit();
 	sfs->createListener("9080");
-	sleep(60);
+	sleep(600);
 	sfs->close();
 }
