@@ -23,11 +23,6 @@ int CMutex::lock ( const char *filename, int32_t line )
 	return result;
 }
 
-int CMutex::unlock ( void )
-{
-	return pthread_mutex_unlock(&mutex);
-}
-
 int CMutex::trylock ( const char *filename, int32_t line )
 {
 	int result = pthread_mutex_trylock(&mutex);

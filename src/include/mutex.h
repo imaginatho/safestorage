@@ -20,8 +20,11 @@ protected:
 public:
 	CMutex ( void );
 	virtual ~CMutex ( void );
-	int lock ( const char *filename = NULL, int32_t line = 0 );
-	int unlock ( void );
+
+	int lock ( void ) { return pthread_mutex_lock(&mutex); };
+	int unlock ( void ) { return pthread_mutex_unlock(&mutex); };
+
+	int lock ( const char *filename, int32_t line );
 	int trylock ( const char *filename = NULL, int32_t line = 0 );
 };
 
