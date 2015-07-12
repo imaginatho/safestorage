@@ -107,7 +107,7 @@ void CSafeStorageListener::doListenEvent ( struct epoll_event &event )
 		event.events = EPOLLIN | EPOLLET;
 		if (epoll_ctl (efd, EPOLL_CTL_ADD, fd, &event) < 0) close(fd);
 		
-		createConnection(fd, in_addr);
+		addConnection(fd, in_addr);
 	}
 }
 
@@ -175,12 +175,17 @@ CSafeStorageConnection *CSafeStorageListener::getConnection ( int fd )
 
 CSafeStorageConnection *CSafeStorageListener::createConnection ( int fd, struct sockaddr &in_addr )
 {
+	return new CSafeStorageConnection(fd, in_addr);
+}
+
+CSafeStorageConnection *CSafeStorageListener::addConnection ( int fd, struct sockaddr &in_addr )
+{
 	CSafeStorageConnections::iterator it = connections.find(fd);
 	if (it != connections.end()) {
 		return it->second;
 	}
 	
-	CSafeStorageConnection *conn = new CSafeStorageConnection(fd, in_addr);
+	CSafeStorageConnection *conn = createConnection(fd, in_addr);
 	connections[fd] = conn;
 	lastFd = fd;
 	lastConnection = conn;

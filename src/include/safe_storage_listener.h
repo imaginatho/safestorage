@@ -33,7 +33,9 @@ class CSafeStorageListener: public ISafeStorageListener, IThreadable
 		void doListenEvent ( struct epoll_event &event );
 		void doDataEvent ( struct epoll_event &event );
 		CSafeStorageConnection *getConnection ( int fd );
-		CSafeStorageConnection *createConnection ( int fd, struct sockaddr &in_addr );
+		CSafeStorageConnection *addConnection ( int fd, struct sockaddr &in_addr );
+		
+		virtual CSafeStorageConnection *createConnection ( int fd, struct sockaddr &in_addr );
 		
     public:
         CSafeStorageListener ( const string &params );

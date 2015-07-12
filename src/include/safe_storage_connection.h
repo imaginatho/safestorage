@@ -27,7 +27,7 @@ class CSafeStorageConnection
         virtual ~CSafeStorageConnection ( void );
 		
 		int32_t onData ( void );
-		int32_t onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data, uint32_t dlen );
+		virtual int32_t onRequest ( CSAFE_NET_HEADER *hdr, uint8_t *data, uint32_t dlen );
 };
 
 #endif

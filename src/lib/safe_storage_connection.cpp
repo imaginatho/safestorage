@@ -52,7 +52,7 @@ int32_t CSafeStorageConnection::onData ( void )
 	while (1) {
 		dread = dcur - dbegin;
 		
-		if (dread < sizeof(CSAFE_NET_HEADER)) dmax = sizeof(CSAFE_NET_HEADER) - dread;
+		if (dread < (int)sizeof(CSAFE_NET_HEADER)) dmax = sizeof(CSAFE_NET_HEADER) - dread;
 		else dmax = ((CSAFE_NET_HEADER *)dbegin)->len - dread;
 
 		printf("dread:%-8d dmax:%-8d sizeof:%-8d\n", dread, dmax, sizeof(CSAFE_NET_HEADER));
